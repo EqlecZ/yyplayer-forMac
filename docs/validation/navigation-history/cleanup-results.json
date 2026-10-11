@@ -1,0 +1,11 @@
+{
+  "Result": "PASS",
+  "RemovedBytes": 53407759825,
+  "RemovedGiB": 49.74,
+  "GeneratedFilesRemaining": false,
+  "RemainingFiles": [
+    "target\\release\\yyplayer.exe"
+  ],
+  "ReleaseConfigPreserved": true,
+  "PreservedHashesMatch": true
+}

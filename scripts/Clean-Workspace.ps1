@@ -5,6 +5,8 @@ $workspaceRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).Trim
 if (-not (Test-Path -LiteralPath (Join-Path $workspaceRoot 'Cargo.toml'))) { throw 'Not a YYPlayer workspace' }
 $targetRoot = Join-Path $workspaceRoot 'target'
 $releaseRoot = Join-Path $targetRoot 'release'
+$debugRoot = Join-Path $targetRoot 'debug'
+$debugConfig = Join-Path $debugRoot 'config'
 $executable = Join-Path $releaseRoot 'yyplayer.exe'
 if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw 'Build release first; no executable to preserve' }
 
@@ -29,8 +31,13 @@ function Assert-WorkspacePath([string]$candidate) {
     return $absolute
 }
 $candidates = @(
-    Get-ChildItem -LiteralPath $targetRoot -Force | Where-Object { $_.FullName -ne $releaseRoot } | ForEach-Object { $_.FullName }
-    Get-ChildItem -LiteralPath $releaseRoot -Force | Where-Object { $_.FullName -ne $executable -and $_.Name -ne 'runtime' } | ForEach-Object { $_.FullName }
+    # Executable-adjacent config/cloud_api may contain user API JSON files.
+    # When present, clean debug's children while retaining this data directory.
+    Get-ChildItem -LiteralPath $targetRoot -Force | Where-Object { $_.FullName -ne $releaseRoot -and ($_.FullName -ne $debugRoot -or -not (Test-Path -LiteralPath $debugConfig)) } | ForEach-Object { $_.FullName }
+    if (Test-Path -LiteralPath $debugConfig) {
+        Get-ChildItem -LiteralPath $debugRoot -Force | Where-Object { $_.FullName -ne $debugConfig } | ForEach-Object { $_.FullName }
+    }
+    Get-ChildItem -LiteralPath $releaseRoot -Force | Where-Object { $_.FullName -ne $executable -and $_.Name -notin @('runtime', 'config') } | ForEach-Object { $_.FullName }
     Join-Path $workspaceRoot 'third_party/mpv/windows-x64/runtime.7z'
     Join-Path $workspaceRoot 'third_party/mpv/windows-x64/libmpv.dll.a'
 )
@@ -48,5 +55,5 @@ foreach ($path in $checked) {
 }
 Write-Output "Removed bytes: $removedBytes"
 Write-Output "Preserved executable: $executable"
-Write-Output 'Source, Git history, docs, user settings/media and fixed libmpv DLL/headers preserved.'
+Write-Output 'Source, Git history, docs, executable-adjacent API config, user settings/media and fixed libmpv DLL/headers preserved.'
 if ($failed.Count) { throw "Cleanup incomplete; locked targets: $($failed -join ', ')" }

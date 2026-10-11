@@ -11,6 +11,7 @@ pub struct MediaPreview {
 
 #[derive(Clone, Debug, Default)]
 pub struct ShellViewModel {
+    pub online: OnlineViewModel,
     pub audio: AudioViewModel,
     pub fonts: FontViewModel,
     pub column_song: f32,
@@ -23,6 +24,7 @@ pub struct ShellViewModel {
     pub search_query: String,
     pub appearance: AppearanceViewModel,
     pub page: i32,
+    pub can_go_back: bool,
     pub selected_id: i32,
     pub selected_title: String,
     pub selected_artist: String,
@@ -68,6 +70,30 @@ pub struct ShellViewModel {
     pub hold_ms: i32,
     pub hold_speed: String,
     pub settings_revision: u64,
+}
+#[derive(Clone, Debug, Default)]
+pub struct OnlineViewModel {
+    pub revision: u64,
+    pub rows: std::rc::Rc<Vec<MediaPreview>>,
+    pub providers: Vec<String>,
+    pub sources: Vec<String>,
+    pub provider: i32,
+    pub source: i32,
+    pub query: String,
+    pub history: Vec<String>,
+    pub keep_history: bool,
+    pub music_enabled: bool,
+    pub lyrics_enabled: bool,
+    pub busy: bool,
+    pub message: String,
+    pub more: bool,
+    pub lyric_mode: bool,
+    pub selected: i32,
+    pub qualities: Vec<String>,
+    pub quality_enabled: Vec<bool>,
+    pub download: bool,
+    pub download_play: bool,
+    pub directories: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default)]

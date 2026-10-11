@@ -103,7 +103,23 @@ impl AppController {
         for reply in replies {
             match reply {
                 music_assets::Reply::Assets(id, assets) if id == self.asset_revision => {
-                    self.assets = *assets;
+                    let mut assets = *assets;
+                    if let Some(song) = &self.online.playing {
+                        assets.title = song.title.clone();
+                        assets.artist = song.artist.clone();
+                        assets.album = song.album.clone();
+                        if assets.lyrics.lines.is_empty() && assets.lyrics.plain.is_empty() {
+                            assets.lyrics = self.assets.lyrics.clone();
+                        }
+                    }
+                    if let Some(path) = self.audio_path()
+                        && let Some(metadata) = self.settings.online.downloads.get(path)
+                    {
+                        assets.title = metadata.title.clone();
+                        assets.artist = metadata.artist.clone();
+                        assets.album = metadata.album.clone();
+                    }
+                    self.assets = assets;
                     if let Some((width, height, bytes)) = self.assets.cover.take() {
                         let buffer =
                             slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(
@@ -157,19 +173,16 @@ impl AppController {
         let number = value.parse::<f64>().ok().filter(|v| v.is_finite());
         match action {
             "output-retry" => self.apply_output(),
-            "music-toggle" if self.page == 4 => {
-                self.expanded = false;
-                self.page = 0;
+            "music-toggle" if self.navigation.current() == 4 => {
+                self.go_back();
             }
             "music-toggle" | "music-detail" => {
                 if !self.engine.snapshot().video {
-                    self.expanded = true;
-                    self.page = 4;
+                    self.visit_page(4);
                 }
             }
             "music-browse" => {
-                self.expanded = false;
-                self.page = 0;
+                self.visit_page(0);
             }
             "output-mode" => {
                 self.settings.audio.mode = match value {

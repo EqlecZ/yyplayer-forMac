@@ -38,5 +38,6 @@ pub fn current() -> PlatformInfo {
 pub mod appearance;
 
 pub mod audio_devices;
+pub mod directory;
 pub mod fonts;
 pub mod window_surface;

@@ -15,5 +15,6 @@ pub mod shortcuts;
 pub mod appearance;
 pub mod library;
 
+pub mod online;
 pub mod path_serde;
 pub mod typography;

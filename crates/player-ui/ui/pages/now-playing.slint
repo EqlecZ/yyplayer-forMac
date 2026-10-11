@@ -5,6 +5,7 @@ import { LyricRow } from "../models.slint";
 export component NowPlaying inherits Rectangle {
     in property <image> artwork; in property <string> title; in property <string> artist; in property <string> album;
     in property <bool> playing; in property <[LyricRow]> lyrics; in property <int> active; in property <string> plain;
+    in property <bool> can-go-back;
     in property <string> output-status; in property <string> lyric-font;
     in property <int> background-style; in property <int> background-opacity; in property <image> custom-background;
     private property <float> breathe: 0;
@@ -29,9 +30,9 @@ export component NowPlaying inherits Rectangle {
         VerticalLayout { horizontal-stretch: 1; spacing: 16px; alignment: center;
             Rectangle { height: min(350px, self.width); horizontal-stretch: 1;
                 MusicArt { x: (parent.width - self.width) / 2; width: min(350px, parent.width); height: self.width; artwork: root.artwork; playing: root.playing; animated: true;
-                    accessible-role: button; accessible-label: "返回音乐库";
-                    focus := FocusScope { key-pressed(event) => {if event.text==" " || event.text=="\n" {root.control("music-browse","");return accept;} return reject;} }
-                    TouchArea { mouse-cursor: pointer; clicked => {focus.focus();root.control("music-browse","");} }
+                    accessible-role: button; accessible-label: "返回上一页";
+                    focus := FocusScope { key-pressed(event) => {if root.can-go-back && (event.text==" " || event.text=="\n") {root.control("page-back","");return accept;} return reject;} }
+                    TouchArea { enabled: root.can-go-back; mouse-cursor: pointer; clicked => {focus.focus();root.control("page-back","");} }
                 }
             }
             Text { text: root.title; color: Theme.text; font-size: 25px; font-weight: 600; horizontal-alignment: center; overflow: elide; height: 40px; }

@@ -1,5 +1,42 @@
 # YYPlayer 进度与证据
 
+## 2026-10-11：A01.5 · 页面历史栈与返回
+
+状态：Done（Windows 实现、验收、当前 dev-api 本地提交及缓存清理）；未推送。详见 [验收记录](validation/navigation-history.md)。
+
+- 实现：统一七个页面的侧栏、设置、歌词 / 媒体与全屏跳转；进入不同页压栈，返回弹栈，重复当前页 / 根页不新增历史。侧栏和视频工具栏有返回入口，歌词大小封面返回来源页；默认 Alt+Left 一次返回一层，保留已有自定义绑定。历史仅本次会话，不保存每次访问的滚动位置。
+- 涉及：AppController / navigation、audio_controller / online_controller、UI 投影、侧栏 / 设置 / 歌词 / 视频工具栏；navigation-history 实际 UI 例子与 Test-NavigationHistory、在线 / 视频 / 音频 UI 回归例子；Clean-Workspace 保留可执行文件旁 API config 目录、Test-Cleanup 保护验收；指南 / CHANGELOG / 本条及报告。
+- 检查：最终 fmt check exit0；严格 clippy workspace/all-targets exit0（2.60秒）；最终 workspace 单测 exit0（core12/mpv9/platform1/UI1/app20，HTTPS默认ignored后完整Test-Online显式通过38.84秒）；Test-NavigationHistory 24步实际点击、三尺寸 / 透明度 / 宽度 exit0；完整 Test-Online 与导航 exit0，有结果的设置返回补充 FrontendOnly 定向复跑 exit0；Test-VideoLibrary 真实视频10循环含5次设置返回、EOF暂停回归 exit0；Test-UiCustomization -SkipBuild（例子由最终workspace测试构建）、ui-feedback、audio-ui exit0；PowerShell / Python 语法、diff与文档链接通过。Test-Cleanup 的实际隔离删除与 WhatIf / 配置hash保护 exit0，真实工作区 WhatIf 已通过。
+- 实机：独立配置 / 自有素材；联网搜索 → 设置 → 返回恢复page6与20条结果，关键词 / API / 来源逐项一致；视频离开实际Idle / renderer释放，返回实际Playing / 帧数增长且位置恢复。普通 Release 无online-qa构建 exit0（3分51秒），4秒正常退出 exit0、ready=true/error空/render初始化0；exe SHA见报告。
+- 提交 / 清理：已按用户授权将联网功能 / 前端 / 返回改动一并提交当前 dev-api；实际 Clean-Workspace exit0，移除53,407,759,825字节（49.74GiB）。target内仅剩Release EXE与空API config目录；EXE / 固定DLL / 四个mpv头文件hash未变，源码 / Git / 验收文档保留。清理后同一EXE独立配置再次启动 / 4秒正常退出 exit0，ready=true、error空、render初始化0；最终提交补录了清理与启动证据。
+- 已知缺陷 / 未验：本轮自有场景未发现新增缺陷；Linux / macOS运行、物理输入 / 跨屏DPI未新增证据，原USB / 位准确 / HDR及发行限制保留。下一步在Linux复验相同返回路径和视频资源恢复。
+
+## 2026-10-11：A01.4 · 联网搜索布局与自动分页
+
+状态：Done（Windows 前端与自有 HTTPS / 原生目录交互）；Linux / macOS 新按钮及第三方分页待验。沿用 dev-api 原有未提交改动，未提交 / 推送。详见 [验收记录](validation/online-search-ui.md)。
+
+- 目标与结果：搜索框移到页标题右侧；删除「加载下一页」，实际列表到底后自动追加并保留位置；短页自动补充，忙碌 / 历史 / 音质弹层不翻页，末页 / 重复页 / 失败停止。API JSON 设置新增「打开文件夹」，后台打开当前有效原始路径，包含默认目录，失败有可见提示。最低窗口展开播放选项时标题简写与筛选动作分行，不挤入面板。
+- 改动文件：player-ui 的 app.slint / online-search.slint / online-options.slint；online_controller / online/mod 的请求保护、重复页停止与有界目录任务；player-platform 的 Cargo features / lib.rs / directory.rs（原生 ShellExecuteW 与平台边界）；online-search 实际 UI 例子、Serve-OnlineFixtures / Test-Online 脚本；ONLINE_API、CHANGELOG、本节及验收报告 / 自有截图。
+- 检查：fmt check exit0；严格 clippy workspace/all-targets exit0；workspace 单测 exit0（core12/mpv9/platform1/UI1/app14，默认 ignored 的 HTTPS 在完整 Test-Online 中显式实跑38.70秒）；Test-Online 不传跳过参数 exit0，实际 UI / libmpv / 导航通过；ui-feedback exit0；普通 Release 无 online-qa 构建 exit0（4分08秒）。最终 diff / 验收脚本语法检查通过。
+- 实机证据：Windows x64 / 固定 hash libmpv / 独立 target 配置 / 自有素材；20→40→45，追加 visible-first=12，末页 more=false；未滚动的短页补到40条；重复第二页及503失败停止且保留20条。API 自选 / 默认目录实际按钮收到原生成功回复。1000×640、1240×900、1460×920 截图审查通过。串流 position=1.020775秒、下载本地播放0.704930秒；原有歌词 / 暂停 / seek / 离线播放回归通过。
+- 新 Release 独立配置启动 / 4秒正常退出 exit0，ready=true、error为空，运行时 mpv v0.41.0-1087-ge470f8986。没有写用户 APPDATA、媒体或系统设置。可执行文件与 SHA 见报告。
+- 已知缺陷 / 限制：自有场景未发现新增缺陷；失败页需重新搜索。第三方 API、只读安装目录与特殊文件系统、Linux / macOS 本轮运行、物理滚轮 / 触控板与多 DPI 待验；既有 USB / HDR 资格不扩展。
+- 下一步：在 Linux 复验同一 HTTPS / 前端 / 目录场景，用实际 API JSON 核对分页末页协议，并补权限失败与物理输入验收。
+
+## 2026-10-10：A01 · Android 联网音乐/歌词移植到 PC
+
+状态：Done（Windows 实现与自有 HTTPS / 实际 UI 联调）；第三方供给、Linux 新功能及新安装包运行待验。详见 [联网指南](ONLINE_API.md)、[ADR 0008](adr/0008-android-cloud-api-port.md)、[验收记录](validation/online-api.md)。
+
+- Git：接手 Rust 工作区干净，dev 的 ec55789 已提交在 origin/dev；fetch 后 master 快进到最新 origin/master 5390a3d，再从 master 创建 dev-api。当前 master / origin/master 为0 ahead、0 behind。新增功能保留在 dev-api 工作区，未自动提交/推送；Android 只读参考，未修改。
+- A01.1 搜索与界面：独立侧栏「音乐联网搜索」、API/来源/关键词/分页、持久历史与删除/清空、封面缩略图、音质播放/下载弹层；纯歌词 API 单独筛选，播放选项可为本地歌曲联网选择歌词。
+- A01.2 数据与播放：Android JSON v1 模板/嵌套 POST/变量/trackFields/headers/apiHosts/音质来源限制、GD三来源五档与限流；现有唯一 libmpv 通过有界本机代理播放HTTPS流，支持Range、完整缓存、自动封面/歌词/翻译、手动歌词持久关联。后台完整下载按真实文件头命名、避免覆盖、附带同名资源、加入音乐库并保留原始元数据，选择下载后播放。歌曲/歌词开关独立，关闭歌曲联网仍可播放下载文件/查歌词。
+- A01.3 设置：运行目录 config/cloud_api 默认读取及可选目录/重读、缺省内置同一JSON、坏配置保留旧值；歌曲下载/歌词/专辑图/串流缓存目录独立选择及恢复默认；缓存只清理应用专属哈希文件，未移动/删除用户库。
+- 文件：core online/settings/path_serde（旧配置默认与Windows cfg警告修正），app online/* 与 online_controller、controller/audio/library/bootstrap，Slint online-search/online-options/settings/audio-options/app 与 viewmodel/shell；自有 HTTPS 服务/验收脚本和实际UI例子、导航回归；config 示例/指南、打包固定示例复制、Cargo.lock/依赖许可元数据及文档。Android runtime路径没有进入PC源码。
+- 检查：严格 clippy workspace/all-targets exit0；workspace/all-targets 单测 exit0（core12/mpv9/UI1/app13，新增缓存隔离边界后app14，HTTPS显式ignored后实跑，例子复用相同controller测试）；Test-Online.ps1 exit0（HTTPS最终39.06秒、真实Slint/libmpv、导航）；fmt最终check exit0；Release无online-qa构建 exit0。最终git diff --check、Python语法/文档链接检查exit0。独立配置的普通Release启动/4秒正常退出exit0，真实内核ready=true。缓存键绑定配置/音质ID/曲目变量，配置调整不误用旧档位；此修正后已再次通过严格clippy、app14单测、HTTPS/实际UI并重建Release。
+- 自有素材/设备证据：Windows x64、现有固定hash libmpv；原创12秒44.1kHz双声道 WAV/FLAC/LRC与封面、临时localhost CA、独立target配置。串流实际Url position1.020828秒/video=false；下载Local position0.704263秒，关闭歌曲联网后仍可播放并选择「手动候选版本」持久歌词。截图与SHA见报告，不据此宣称DAC位准确。
+- 未执行：GD真实曲目/账号供给、物理目录选择、Linux新功能/特殊文件系统、安装升级卸载、USB/HDR/多屏；打包脚本复制固定模板及指南已改，未生成新包。下载无后台service/断点续传，Linux原子发布要求同目录hard link。原有二进制发行许可与设备资格限制保留。
+- 下一动作：使用实际Android JSON与授权曲目试用远端供给；在Linux运行同一数据/播放/目录回归及生成新包。本轮功能无需再接Android工程或更换播放内核。
+
 ## 2026-10-03：Windows/Linux 共用源码合并准备
 
 状态：Done（文档与 AGENTS 接续规则更新）；用户准备将 dev-linux 合入 master，实际提交 / 合并 / 推送尚未由代理执行。目标是在相应系统用相同 Cargo 命令分别生成 Windows exe 与 Linux ELF，平台 API / 依赖继续使用 cfg 隔离。

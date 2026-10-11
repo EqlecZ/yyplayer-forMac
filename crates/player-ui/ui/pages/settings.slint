@@ -3,7 +3,9 @@ import { Theme } from "../theme.slint";
 import { FontOptions } from "../components/font-options.slint";
 import { AppearanceOptions } from "../components/appearance-options.slint";
 import { ShortcutRow } from "../models.slint";
+import { OnlineOptions } from "../components/online-options.slint";
 export component SettingsPage inherits Rectangle {
+    in property <bool> online-music-enabled; in property <bool> online-lyrics-enabled; in property <[string]> online-directories;
     in property <[ShortcutRow]> bindings; in property <int> seek-step; in property <int> volume-step;
     in property <int> hold-ms; in property <string> hold-speed;
     in property <int> design; in property <int> scheme; in property <bool> system-accent; in property <string> custom-accent; in property <bool> reduced; in property <bool> os-reduced; in property <bool> system-available;
@@ -21,10 +23,13 @@ export component SettingsPage inherits Rectangle {
                 Button { text: "外观与动效"; width: 110px; primary: root.section == 0; clicked => { root.section = 0; } }
                 Button { text: "字体"; width: 90px; primary: root.section == 1; clicked => { root.section = 1; } }
                 Button { text: "播放快捷键"; width: 110px; primary: root.section == 2; clicked => { root.section = 2; } }
+                Button { text: "联网服务"; width: 110px; primary: root.section == 3; clicked => { root.section = 3; } }
             }
             if root.section == 0: AppearanceOptions { design: root.design; scheme: root.scheme; system-accent: root.system-accent; custom-accent: root.custom-accent; reduced: root.reduced; os-reduced: root.os-reduced; system-available: root.system-available; library-background-style: root.library-background-style; library-background-opacity: root.library-background-opacity; library-background-blur: root.library-background-blur; library-background-name: root.library-background-name; custom-library-background: root.custom-library-background; lyrics-background-style: root.lyrics-background-style; lyrics-background-opacity: root.lyrics-background-opacity; lyrics-background-blur: root.lyrics-background-blur; lyrics-background-name: root.lyrics-background-name; custom-lyrics-background: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
             if root.section == 1: FontOptions { names: root.font-names; lyric-names: root.font-lyric-names; subtitle-names: root.font-subtitle-names; ui-index: root.font-ui-index; lyric-index: root.font-lyric-index; subtitle-index: root.font-subtitle-index; ass: root.font-ass; busy: root.font-busy; message: root.font-message; lyric-font: root.lyric-font; control(action,value) => { root.control(action,value); } }
+            if root.section == 3: OnlineOptions { music-enabled: root.online-music-enabled; lyrics-enabled: root.online-lyrics-enabled; directories: root.online-directories; control(action,value) => {root.control(action,value);} }
             if root.section == 2: Rectangle {
+
                 VerticalLayout { spacing: 14px;
                     Text { text: "播放快捷键"; color: Theme.text; font-size: 20px; font-weight: 600; height: 32px; }
                     Text { text: "输入如 Space、Right、Ctrl+O。Enter / Esc 保留给全屏。\n文本编辑与选项面板打开时，播放快捷键不会抢占输入。"; color: Theme.muted; font-size: 12px; height: 42px; }
@@ -51,7 +56,7 @@ export component SettingsPage inherits Rectangle {
                         height: 38px; spacing: 14px; alignment: start;
                         Button { text: "保存快捷键"; primary: true; clicked => { root.control("save-shortcuts", ""); } }
                         Button { text: "恢复默认"; clicked => { root.control("reset-shortcuts", ""); } }
-                        Button { text: "返回播放"; clicked => { root.control("video", ""); } }
+                        Button { text: "返回上一页"; clicked => { root.control("page-back", ""); } }
                     }
                     Text { text: "解码设置位于播放页的「播放选项」中，可应用到全局、文件夹或单文件。\n音量、输出设备、快捷键、最近文件和解码规则会保存在用户配置目录。"; color: Theme.muted; font-size: 12px; height: 52px; }
                 }

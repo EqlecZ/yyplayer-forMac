@@ -167,12 +167,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if returning {
                         if w.get_render_ready() || snapshot.video_output_enabled { return Ok(false); }
                         ensure!(snapshot.phase == PlaybackPhase::Idle && v.can_resume_video, "cycle return did not preserve suspended session");
-                        frames = w.get_render_frames(); control(&mut c, "video", ""); returning = false;
+                        let from_settings = cycles % 2 == 1;
+                        ensure!(v.page == if from_settings { 3 } else { 5 }, "cycle returned to the wrong page");
+                        frames = w.get_render_frames(); control(&mut c, if from_settings { "page-back" } else { "video" }, ""); returning = false;
                         return Ok(false);
                     }
                     if !w.get_render_ready() || !v.playing || w.get_render_frames() < frames + 8 { return Ok(false); }
                     cycles += 1;
-                    if cycles < 10 { c.dispatch(UiAction::Navigate(5)); returning = true; return Ok(false); }
+                    ensure!(v.page == 1 && snapshot.position.is_some_and(|p| p.as_secs_f64() >= position - 0.3), "history return lost the video page or position");
+                    if cycles < 10 { c.dispatch(UiAction::Navigate(if cycles % 2 == 1 { 3 } else { 5 })); returning = true; return Ok(false); }
                 }
                 11 => {
                     c.dispatch(UiAction::Navigate(5));

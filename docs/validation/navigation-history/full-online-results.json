@@ -1,0 +1,60 @@
+[
+  {
+    "position": 1.060063,
+    "stage": "stream",
+    "title": "原创 HTTPS 验收",
+    "video": false
+  },
+  {
+    "file": "E:\\SourceFiles\\rust\\yyplayer\\target/online-qa\\ui-download\\原创 HTTPS 验收 - YYPlayer QA (9).wav",
+    "lyrics": 2,
+    "position": 0.710593,
+    "stage": "download-play"
+  },
+  {
+    "first_line": "手动候选版本",
+    "music_enabled": false,
+    "stage": "manual-local-lyrics"
+  },
+  {
+    "rows": 40,
+    "stage": "pagination-append",
+    "visible_first": 12
+  },
+  {
+    "more": false,
+    "rows": 45,
+    "stage": "pagination-end"
+  },
+  {
+    "rows": 40,
+    "stage": "short-page-fill",
+    "visible_first": 0
+  },
+  {
+    "more": false,
+    "rows": 20,
+    "stage": "duplicate-page-stop"
+  },
+  {
+    "message": "服务返回HTTP 503",
+    "rows": 20,
+    "stage": "failed-page-stop"
+  },
+  {
+    "path": "E:\\SourceFiles\\rust\\yyplayer\\target/online-qa\\api",
+    "stage": "open-api-directory"
+  },
+  {
+    "path": "E:\\SourceFiles\\rust\\yyplayer\\target\\debug\\examples\\config/cloud_api",
+    "stage": "open-default-api-directory"
+  },
+  {
+    "page": 6,
+    "provider": 0,
+    "query": "失败分页验收",
+    "rows": 0,
+    "source": 0,
+    "stage": "settings-back-search"
+  }
+]

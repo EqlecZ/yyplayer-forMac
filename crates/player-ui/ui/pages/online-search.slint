@@ -1,0 +1,89 @@
+import { ListView, ScrollView, ComboBox, Button, CheckBox, Spinner } from "std-widgets.slint";
+import { Theme, Icons } from "../theme.slint";
+import { IconButton } from "../components/controls.slint";
+import { TrackRow } from "../models.slint";
+import { Cover } from "../components/media.slint";
+export component OnlineSearchPage inherits Rectangle {
+    in property <[TrackRow]> tracks; in property <[string]> providers; in property <[string]> sources;
+    in property <int> provider-index; in property <int> source-index;
+    in property <[string]> history; in property <bool> keep-history; in property <bool> enabled;
+    in property <bool> busy; in property <bool> compact; in property <bool> lyric-mode; in property <string> message;
+    in property <int> selected: -1; in property <[string]> qualities; in property <[bool]> quality-enabled;
+    in property <bool> download; in property <bool> download-play;
+    in-out property <int> visible-first; in-out property <int> visible-count;
+    in-out property <bool> history-open;
+    in-out property <bool> at-bottom;
+    callback control(string,string);
+    VerticalLayout { padding-left: 24px; padding-right: 24px; padding-bottom: 20px; spacing: 12px;
+        HorizontalLayout { height: 34px; spacing: 8px;
+            ComboBox { model: root.providers; current-index: root.provider-index; horizontal-stretch: 1; min-width: 0px; selected(value) => { root.control("online-provider", "" + self.current-index); } }
+            ComboBox { model: root.sources; current-index: root.source-index; horizontal-stretch: 1; min-width: 0px; selected(value) => { root.control("online-source", "" + self.current-index); } }
+            if !root.compact && !root.lyric-mode: Button { text: root.history-open ? "搜索结果" : "搜索历史"; clicked => {root.history-open=!root.history-open;} }
+            if !root.compact: Button { text: "重读配置"; clicked => { root.control("online-reload", ""); } }
+            if !root.compact && root.lyric-mode: Button { text: "返回歌曲搜索"; clicked => { root.control("online-music-mode", ""); } }
+        }
+        if root.compact: HorizontalLayout { height: 34px; spacing: 8px; alignment: end;
+            if !root.lyric-mode: Button { text: root.history-open ? "搜索结果" : "搜索历史"; clicked => {root.history-open=!root.history-open;} }
+            Button { text: "重读配置"; clicked => { root.control("online-reload", ""); } }
+            if root.lyric-mode: Button { text: "返回歌曲搜索"; clicked => { root.control("online-music-mode", ""); } }
+        }
+        if !root.enabled: Text { text: root.lyric-mode ? "请在设置 → 联网服务中开启联网歌词" : "请在设置 → 联网服务中开启联网搜索歌曲"; color: Theme.muted; height: 34px; }
+        HorizontalLayout { height: 26px; spacing: 10px;
+            if root.busy: Spinner { width: 24px; height: 24px; }
+            Text { text: root.message; color: Theme.muted; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
+            if root.busy: Button { text: "取消"; clicked => { root.control("online-cancel", ""); } }
+        }
+        if (root.tracks.length == 0 || root.history-open) && !root.lyric-mode: ScrollView { vertical-stretch: 1; viewport-width: self.width;
+            VerticalLayout { spacing: 8px;
+                HorizontalLayout { height: 36px;
+                    Text { text: "搜索历史"; color: Theme.text; font-size: 18px; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
+                    CheckBox { text: "保留历史"; checked: root.keep-history; toggled => { root.control("online-history-keep", self.checked ? "yes" : "no"); } }
+                    Button { text: "清除全部"; enabled: root.history.length > 0; clicked => { root.control("online-history-clear", ""); } }
+                }
+                if root.history.length == 0: Text { text: "暂无搜索历史"; color: Theme.faint; height: 40px; }
+                for query[index] in root.history: HorizontalLayout { height: 40px; spacing: 8px;
+                    Button { text: query; horizontal-stretch: 1; enabled: root.enabled; clicked => { root.history-open=false; root.control("online-history", "" + index); } }
+                    IconButton { icon: Icons.close; label: "删除该搜索历史"; clicked => { root.control("online-history-delete", "" + index); } }
+                }
+            }
+        }
+        if root.tracks.length > 0 && !root.history-open: list := ListView {
+            vertical-stretch: 1; viewport-width: self.width;
+            callback report-visible(); report-visible => {
+                root.visible-first=max(0,floor(-self.viewport-y/76px));root.visible-count=ceil(self.height/76px)+1;
+                root.at-bottom=self.visible-height > 0px && self.viewport-height > 0px && -self.viewport-y + self.visible-height >= self.viewport-height - 2px;
+            }
+            init => {self.report-visible();} changed viewport-y => {self.report-visible();} changed height => {self.report-visible();} changed viewport-height => {self.report-visible();} changed visible-height => {self.report-visible();}
+            scrolled => { self.report-visible(); }
+            for track[index] in root.tracks: Rectangle { height: 76px; background: index == root.selected ? Theme.accent.with-alpha(0.12) : Theme.surface.with-alpha(0.35); border-radius: 10px;
+                accessible-role: button; accessible-label: track.title + "，" + track.artist;
+                focus := FocusScope { key-pressed(event) => {if event.text == " " || event.text == "\n" {root.control("online-play","" + index);return accept;}return reject;} }
+                TouchArea { width: parent.width - 52px; mouse-cursor: pointer; clicked => {focus.focus(); root.control("online-play", "" + index); } }
+                Cover { x: 10px; y: 10px; width: 56px; height: 56px; artwork: track.artwork; artwork-id: -1; }
+                Text { x: 78px; y: 12px; width: parent.width - 140px; height: 24px; text: track.title; color: Theme.text; font-size: 16px; font-weight: 600; overflow: elide; }
+                Text { x: 78px; y: 42px; width: parent.width - 140px; height: 20px; text: track.artist + " · " + track.collection; color: Theme.muted; font-size: 12px; overflow: elide; }
+                if !root.lyric-mode: IconButton { x: parent.width - 44px; y: 22px; icon: Icons.more; label: "选择播放音质 / 下载歌曲"; clicked => { root.control("online-menu", "" + index); } }
+            }
+        }
+    }
+    if root.selected >= 0: Rectangle {
+        width: parent.width; height: parent.height; background: #00000088;
+        TouchArea { clicked => { root.control("online-options-close", ""); } }
+        Rectangle { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; width: min(650px,parent.width - 40px); height: min(520px,parent.height - 30px); background: Theme.surface; border-radius: 18px;
+            ScrollView { width: parent.width; height: parent.height; viewport-width: self.width;
+                VerticalLayout { padding: 24px; spacing: 12px;
+                    Text { text: root.download ? "下载歌曲 · 请求音质" : "选择播放音质"; color: Theme.text; font-size: 20px; height: 30px; }
+                    HorizontalLayout { height: 36px;
+                        Button { text: "流式播放"; primary: !root.download; clicked => { root.control("online-options-download", "no"); } }
+                        Button { text: "下载歌曲"; primary: root.download; clicked => { root.control("online-options-download", "yes"); } }
+                    }
+                    if root.download: CheckBox { text: "下载完成后播放"; checked: root.download-play; toggled => { root.control("online-download-play", self.checked ? "yes" : "no"); } }
+                    Button { text: root.busy ? "正在检查…" : "检查这首歌的可用音质"; enabled: !root.busy; clicked => { root.control("online-check-qualities", ""); } }
+                    for quality[index] in root.qualities: Button { text: quality; height: 40px; enabled: !root.busy && root.quality-enabled[index]; clicked => { root.control("online-quality", "" + index); } }
+                    Text { text: "服务报告是请求结果；实际格式以媒体文件为准。"; color: Theme.faint; wrap: word-wrap; height: 32px; }
+                    Button { text: "关闭"; clicked => { root.control("online-options-close", ""); } }
+                }
+            }
+        }
+    }
+}

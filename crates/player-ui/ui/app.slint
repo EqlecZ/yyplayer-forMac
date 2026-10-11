@@ -1,4 +1,4 @@
-import { ScrollView, Palette, Button, ComboBox } from "std-widgets.slint";
+import { ScrollView, Palette, Button, ComboBox, LineEdit } from "std-widgets.slint";
 import { GlassSurface } from "components/glass.slint";
 import { Theme, Icons, BackgroundArt } from "theme.slint";
 import { Icon, NavItem, ActionButton } from "components/controls.slint";
@@ -14,9 +14,25 @@ import { VideoLibraryPage } from "pages/video-library.slint";
 import { VideoPlayerToolbar } from "components/video-player-toolbar.slint";
 import { RecentPage } from "pages/recent.slint";
 import { SettingsPage } from "pages/settings.slint";
+import { OnlineSearchPage } from "pages/online-search.slint";
 export { TrackRow, ShortcutRow, EqBandRow, LyricRow, AudioForm } from "models.slint";
 import { TrackRow, ShortcutRow, LyricRow, AudioForm } from "models.slint";
 export component AppWindow inherits Window {
+    in property <int> online-revision: -1; in property <[TrackRow]> online-tracks;
+    in property <[string]> online-providers; in property <[string]> online-sources;
+    in property <int> online-provider; in property <int> online-source; in property <string> online-query;
+    in property <[string]> online-history; in property <bool> online-keep-history;
+    in property <bool> online-music-enabled; in property <bool> online-lyrics-enabled;
+    in property <bool> online-busy; in property <string> online-message; in property <bool> online-more;
+    in property <bool> online-lyric-mode; in property <int> online-selected: -1;
+    in property <[string]> online-qualities; in property <[bool]> online-quality-enabled;
+    in property <bool> online-download; in property <bool> online-download-play; in property <[string]> online-directories;
+    in-out property <int> online-visible-first; in-out property <int> online-visible-count;
+    private property <bool> online-history-open;
+    private property <bool> online-at-bottom;
+    // Responsive header decisions use window constraints, avoiding a layout
+    // cycle through the content's own preferred/minimum width.
+    private property <bool> online-compact: root.panel-open || root.width < 1120px;
     no-frame: true;
     in-out property <bool> window-maximized; in property <bool> window-controls-left;
     callback window-action(string);
@@ -57,6 +73,7 @@ export component AppWindow inherits Window {
     in property <bool> can-resume-video;
     in property <string> search-query;
     in property <int> page; in property <int> selected-id;
+    in property <bool> can-go-back;
     in property <string> selected-title; in property <string> selected-artist; in property <string> selected-duration;
     in property <int> selected-cover; in property <float> volume; in property <bool> favorite;
     in property <string> status-message; in property <[TrackRow]> tracks; in property <[TrackRow]> queue;
@@ -88,7 +105,7 @@ export component AppWindow inherits Window {
     out property <float> content-width: content.width / 1px;
     out property <float> content-bottom: (root.chrome-height + content.y + content.height) / 1px;
     private property <bool> search-focused;
-    out property <bool> shortcuts-blocked: root.page == 3 || root.panel-open || ((root.page == 0 || root.page == 5) && root.search-focused);
+    out property <bool> shortcuts-blocked: root.page == 3 || root.page == 6 || root.panel-open || ((root.page == 0 || root.page == 5) && root.search-focused);
     private property <bool> immersive: root.page == 1 && root.fullscreen-mode;
     private property <bool> controls-awake: true;
     in-out property <bool> pointer-in-controls;
@@ -107,7 +124,12 @@ export component AppWindow inherits Window {
     private property <float> page-arrival: 1;
     animate page-arrival { duration: Theme.smooth; easing: ease-out; }
     page-animation := Timer { interval: 16ms; running: false; triggered => { self.running = false; root.page-arrival = 1; } }
-    changed page => { root.search-focused = false; root.pointer-activity(); if root.page != 1 && !Theme.reduced-motion { root.page-arrival = 0; page-animation.start(); } else { page-animation.stop(); root.page-arrival = 1; } }
+    changed page => { root.online-at-bottom = false; root.online-history-open = false; root.search-focused = false; root.pointer-activity(); if root.page != 1 && !Theme.reduced-motion { root.page-arrival = 0; page-animation.start(); } else { page-animation.stop(); root.page-arrival = 1; } }
+    // Keep request scheduling on the window; the conditional page only reports
+    // geometry. Dispatch after projection has released controller borrows.
+    Timer { interval: 150ms; running: root.page == 6 && root.online-at-bottom && root.online-tracks.length > 0 && !root.online-history-open && (root.online-lyric-mode ? root.online-lyrics-enabled : root.online-music-enabled) && root.online-more && !root.online-busy && root.online-selected < 0;
+        triggered => { root.control("online-more", ""); }
+    }
     changed status-message => { root.toast-visible = root.status-message != ""; hide-toast.restart(); }
     changed status-revision => { root.toast-visible = root.status-message != ""; hide-toast.restart(); }
     hide-controls := Timer {
@@ -146,9 +168,11 @@ export component AppWindow inherits Window {
                     }
                     NavItem { text: "音乐库"; icon: Icons.music; selected: root.page == 0; clicked => { root.navigate(0); } }
                     NavItem { text: "视频库"; icon: Icons.video; selected: root.page == 5; clicked => { root.navigate(5); } }
+                    NavItem { text: "音乐联网搜索"; icon: Icons.search; selected: root.page == 6; clicked => { root.navigate(6); } }
                     NavItem { text: "最近打开"; icon: Icons.clock; selected: root.page == 2; clicked => { root.navigate(2); } }
                     NavItem { text: "打开文件"; icon: Icons.folder; clicked => { root.open-file(); } }
                     Rectangle { vertical-stretch: 1; }
+                    Button { text: "返回上一页"; height: 34px; enabled: root.can-go-back; clicked => { root.control("page-back", ""); } }
                     NavItem { text: "设置"; icon: Icons.settings; selected: root.page == 3; clicked => { root.navigate(3); } }
                 }
             }
@@ -168,20 +192,32 @@ export component AppWindow inherits Window {
                         visible: !root.fullscreen-mode;
                         height: root.fullscreen-mode ? 0px : 84px; padding-left: 24px; padding-right: 24px; spacing: 12px;
                         VerticalLayout {
-                            horizontal-stretch: 1; alignment: center; spacing: 4px;
-                            Text { text: root.page == 1 ? root.selected-title : (root.page == 0 ? "音乐库" : (root.page == 2 ? "最近打开" : (root.page == 5 ? "视频库" : "设置"))); color: Theme.text; font-size: root.page == 1 ? 14px : 22px; font-weight: 600; overflow: elide; }
+                            horizontal-stretch: root.page == 6 ? 0 : 1; alignment: center; spacing: 4px;
+                            max-width: root.page == 6 ? (root.panel-open && root.width < 1120px ? 90px : 180px) : 10000px;
+                            Text { text: root.page == 1 ? root.selected-title : (root.page == 0 ? "音乐库" : (root.page == 2 ? "最近打开" : (root.page == 5 ? "视频库" : (root.page == 6 ? (root.panel-open && root.width < 1120px ? "联网搜索" : "音乐联网搜索") : "设置")))); color: Theme.text; font-size: root.page == 1 ? 14px : (root.page == 6 && root.panel-open && root.width < 1120px ? 18px : 22px); font-weight: 600; overflow: elide; }
+                        }
+                        if root.page == 6: VerticalLayout {
+                            horizontal-stretch: 1; alignment: center;
+                            HorizontalLayout { height: 38px; spacing: 8px;
+                                LineEdit { text: root.online-query; placeholder-text: root.online-lyric-mode ? "搜索当前歌曲的歌词候选" : "搜索歌名、歌手、专辑"; horizontal-stretch: 1; min-width: 0px; enabled: root.online-lyric-mode ? root.online-lyrics-enabled : root.online-music-enabled;
+                                    edited(value) => { root.control("online-query", value); }
+                                    accepted => { root.online-history-open = false; root.control("online-search", ""); }
+                                }
+                                Button { text: "搜索"; primary: true; enabled: root.online-lyric-mode ? root.online-lyrics-enabled : root.online-music-enabled; clicked => { root.online-history-open = false; root.control("online-search", ""); } }
+                            }
                         }
                         if root.page == 0 || root.page == 5: VerticalLayout { width: root.panel-open ? 110px : 180px; alignment: center; Rectangle { height: 34px; border-radius: 17px; background: Theme.surface.with-alpha(0.7); border-width: 1px; border-color: Theme.border;
                             Text { x: 12px; width: parent.width - 24px; height: parent.height; text: root.page == 5 ? "搜索视频" : "搜索音乐"; color: Theme.faint; visible: search-input.text == "" && !search-input.has-focus; vertical-alignment: center; }
                             search-input := TextInput { x: 12px; width: parent.width - 24px; height: parent.height; text: root.search-query; single-line: true; color: Theme.text; vertical-alignment: center; accessible-label: root.page == 5 ? "搜索视频" : "搜索曲目"; changed has-focus => { root.search-focused = self.has-focus; } edited => { root.search-changed(self.text); } }
                         } }
-                        if root.page != 0 && root.page != 5: VerticalLayout { width: 110px; alignment: center; Button { text: "打开文件"; clicked => { root.open-file(); } } }
+                        if root.page != 0 && root.page != 5 && (root.page != 6 || !root.online-compact): VerticalLayout { width: 110px; alignment: center; Button { text: "打开文件"; clicked => { root.open-file(); } } }
                         if root.page == 1: VerticalLayout { width: 85px; alignment: center; Button { text: "媒体库"; clicked => { root.navigate(0); } } }
                         if root.page == 1: VerticalLayout { width: 110px; alignment: center; ComboBox { model: ["窗口", "最大化", "全屏"]; current-index: root.window-mode; selected(value) => { root.control("window-mode", "" + self.current-index); } } }
-                        VerticalLayout { width: 100px; alignment: center; Button { text: root.panel-open ? "关闭选项" : "播放选项"; clicked => { root.control("panel", ""); } } }
+                        VerticalLayout { width: root.page == 6 && root.online-compact ? 72px : 100px; alignment: center; Button { text: root.page == 6 && root.online-compact ? (root.panel-open ? "关闭" : "选项") : (root.panel-open ? "关闭选项" : "播放选项"); clicked => { root.control("panel", ""); } } }
                     }
                     if root.page == 0: MusicPage { visible-first <=> root.library-visible-first; visible-count <=> root.library-visible-count; column-song <=> root.column-song; column-artist <=> root.column-artist; library-tracks: root.library-tracks; folders: root.library-folders; folder-index: root.library-folder; scanning: root.library-busy; library-selected: root.library-selected; control(action,value) => { root.control(action,value); } preview: root.preview; tracks: root.tracks; selected-id: root.selected-id; select-preview(id) => { root.select-preview(id); } select-demo-album(id) => { root.control("demo-album", "" + id); } }
-                    if root.page == 4: NowPlaying { lyric-font: root.lyric-font; artwork: root.music-cover; title: root.selected-title; artist: root.selected-artist; album: root.album; lyrics: root.lyrics; active: root.active-lyric; plain: root.plain-lyrics; playing: root.playing; output-status: root.audio-status; background-style: root.lyrics-background-style; background-opacity: root.lyrics-background-opacity; custom-background: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
+                    if root.page == 4: NowPlaying { can-go-back: root.can-go-back; lyric-font: root.lyric-font; artwork: root.music-cover; title: root.selected-title; artist: root.selected-artist; album: root.album; lyrics: root.lyrics; active: root.active-lyric; plain: root.plain-lyrics; playing: root.playing; output-status: root.audio-status; background-style: root.lyrics-background-style; background-opacity: root.lyrics-background-opacity; custom-background: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
+                    if root.page == 6: OnlineSearchPage { compact: root.panel-open && root.width < 1280px; at-bottom <=> root.online-at-bottom; history-open <=> root.online-history-open; tracks: root.online-tracks; providers: root.online-providers; sources: root.online-sources; provider-index: root.online-provider; source-index: root.online-source; history: root.online-history; keep-history: root.online-keep-history; enabled: root.online-lyric-mode ? root.online-lyrics-enabled : root.online-music-enabled; busy: root.online-busy; lyric-mode: root.online-lyric-mode; message: root.online-message; selected: root.online-selected; qualities: root.online-qualities; quality-enabled: root.online-quality-enabled; download: root.online-download; download-play: root.online-download-play; visible-first <=> root.online-visible-first; visible-count <=> root.online-visible-count; control(action,value) => {root.control(action,value);} }
                     if root.page == 5: VideoLibraryPage {
                         tracks: root.video-library-tracks; folders: root.video-library-folders; folder-index: root.video-library-folder;
                         scanning: root.video-library-busy; selected-id: root.video-library-selected;
@@ -198,6 +234,7 @@ export component AppWindow inherits Window {
                         }
                     }
                     if root.page == 3: SettingsPage {
+                        online-music-enabled: root.online-music-enabled; online-lyrics-enabled: root.online-lyrics-enabled; online-directories: root.online-directories;
                         font-names: root.font-names; font-lyric-names: root.font-lyric-names; font-subtitle-names: root.font-subtitle-names; font-ui-index: root.font-ui-index; font-lyric-index: root.font-lyric-index; font-subtitle-index: root.font-subtitle-index; font-ass: root.font-ass; font-busy: root.font-busy; font-message: root.font-message; lyric-font: root.lyric-font;
                         design: root.appearance-design; scheme: root.appearance-scheme; system-accent: root.appearance-system-accent; custom-accent: root.appearance-custom; reduced: root.appearance-reduced; os-reduced: root.appearance-os-reduced; system-available: root.appearance-system-available;
                         library-background-style: root.library-background-style; library-background-opacity: root.library-background-opacity; library-background-blur: root.library-background-blur; library-background-name: root.library-background-name;
@@ -222,7 +259,7 @@ export component AppWindow inherits Window {
     }
     if root.header-visible: Rectangle {
         x: 0px; y: root.fullscreen-mode ? 0px : 36px; width: root.video-width * 1px; height: root.header-height; background: Theme.glass;
-        VideoPlayerToolbar {
+        VideoPlayerToolbar { can-go-back: root.can-go-back;
             width: parent.width; height: parent.height;
             title: root.selected-title; panel-open: root.panel-open; window-mode: root.window-mode;
             open-file => { root.open-file(); } browse => { root.navigate(5); }

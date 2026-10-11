@@ -224,6 +224,7 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         if window.get_shortcuts_blocked() { controller.cancel_hold(); }
         let paths = std::mem::take(&mut *dropped.borrow_mut()); if !paths.is_empty() { controller.prepare_paths(paths); }
         controller.request_library_covers(window.get_library_visible_first(),window.get_library_visible_count());
+        controller.request_online_covers(window.get_online_visible_first(), window.get_online_visible_count());
         controller.tick();
         window.set_window_maximized(window.window().is_maximized());
         if smoke_script {

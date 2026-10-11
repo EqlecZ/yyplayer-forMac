@@ -12,6 +12,8 @@ __pycache__/
 !/.env.example
 /settings*.json
 /library-cache.json
+/config/cloud_api/*.json
+!/config/cloud_api/example-gd.json
 /*.library.json
 *.corrupt-*.json
 /.vscode/*

@@ -51,6 +51,7 @@ export component AudioOptions inherits VerticalLayout {
     Text { text: "导入支持 YYPlayer JSON 与 APO 的 PK / LS / HS（带 Q）。不执行 Include 或任意滤镜。更高优先级的规则可能覆盖本次设置。"; color: Theme.faint; font-size: 11px; wrap: word-wrap; min-height: 48px; }
     Rectangle { height: 1px; background: Theme.border; }
     }
+    Button { text: "联网获取歌词"; clicked => { root.control("online-lyrics", ""); } }
     Text { text: "本地歌词"; color: Theme.text; font-size: 16px; height: 28px; }
     Button { text: "导入歌词（LRC / TXT）"; clicked => { root.control("lyrics-import", ""); } }
     HorizontalLayout { Text { text: "歌词提前（毫秒）"; color: Theme.muted; vertical-alignment: center; } LineEdit { text: "" + root.form.offset-ms; edited(value) => { root.control("lyrics-offset", value); } } }

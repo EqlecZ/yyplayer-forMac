@@ -52,6 +52,10 @@ foreach ($entry in Get-ChildItem -LiteralPath $runtimeRoot -Force) {
 if (-not (Test-Path -LiteralPath (Join-Path $runtimeStage $manifest.library) -PathType Leaf)) { throw 'Packaged libmpv DLL is missing.' }
 if (-not (Get-ChildItem -LiteralPath $runtimeStage -Filter '*.dll' -File -Recurse)) { throw 'No runtime DLLs were copied into the package.' }
 
+$cloudApiStage = Join-Path $portableStage 'config/cloud_api'
+New-Item -ItemType Directory -Path $cloudApiStage -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $projectRoot 'config/cloud_api/example-gd.json') -Destination $cloudApiStage
+Copy-Item -LiteralPath (Join-Path $projectRoot 'config/cloud_api/README.md') -Destination $cloudApiStage
 Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSE') -Destination $portableStage
 Copy-Item -LiteralPath (Join-Path $projectRoot 'THIRD_PARTY_NOTICES.md') -Destination $portableStage
 Copy-Item -LiteralPath (Join-Path $projectRoot 'docs/dependency-licenses.md') -Destination (Join-Path $portableStage 'DEPENDENCY_LICENSES.md')

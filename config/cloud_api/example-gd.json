@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "providers": [
+    {
+      "id": "gd-studio",
+      "name": "GD音乐台",
+      "baseUrl": "https://music-api.gdstudio.xyz/api.php",
+      "headers": {
+        "Accept": "application/json"
+      },
+      "mediaHeaders": {},
+      "timeoutMs": 15000,
+      "requestsPerWindow": 40,
+      "windowSeconds": 300,
+      "sources": {
+        "netease": "网易云",
+        "joox": "JOOX",
+        "bilibili": "哔哩哔哩"
+      },
+      "qualities": [
+        {
+          "id": "128",
+          "name": "标准 · 128 kbps",
+          "value": "128",
+          "extension": "mp3"
+        },
+        {
+          "id": "192",
+          "name": "较高 · 192 kbps",
+          "value": "192",
+          "extension": "mp3"
+        },
+        {
+          "id": "320",
+          "name": "高品质 · 320 kbps",
+          "value": "320",
+          "extension": "mp3"
+        },
+        {
+          "id": "740",
+          "name": "无损 · 16bit",
+          "value": "740",
+          "extension": "flac"
+        },
+        {
+          "id": "999",
+          "name": "无损 · 24bit",
+          "value": "999",
+          "extension": "flac"
+        }
+      ],
+      "search": {
+        "parameters": {
+          "types": "search",
+          "source": "{source}",
+          "name": "{query}",
+          "count": "{limit}",
+          "pages": "{page}"
+        },
+        "response": {
+          "items": "",
+          "fields": {
+            "id": "id",
+            "title": "name",
+            "artist": "artist",
+            "album": "album",
+            "source": "source",
+            "lyricId": "lyric_id",
+            "duration": "duration",
+            "picId": "pic_id"
+          }
+        }
+      },
+      "stream": {
+        "parameters": {
+          "types": "url",
+          "source": "{source}",
+          "id": "{id}",
+          "br": "{quality}"
+        },
+        "response": {
+          "url": "url",
+          "quality": "br",
+          "size": "size",
+          "sizeUnit": "KB",
+          "format": "format"
+        }
+      },
+      "lyricSearch": {
+        "parameters": {
+          "types": "search",
+          "source": "{source}",
+          "name": "{query}",
+          "count": "{limit}",
+          "pages": "{page}"
+        },
+        "response": {
+          "items": "",
+          "fields": {
+            "id": "id",
+            "title": "name",
+            "artist": "artist",
+            "album": "album",
+            "source": "source",
+            "lyricId": "lyric_id",
+            "picId": "pic_id"
+          }
+        }
+      },
+      "lyric": {
+        "parameters": {
+          "types": "lyric",
+          "source": "{source}",
+          "id": "{lyricId}"
+        },
+        "response": {
+          "lyric": "lyric",
+          "translation": "tlyric"
+        }
+      },
+      "variables": {
+        "artworkSize": "500"
+      },
+      "pageSize": 20,
+      "artwork": {
+        "parameters": {
+          "types": "pic",
+          "source": "{source}",
+          "id": "{picId}",
+          "size": "{artworkSize}"
+        },
+        "response": {
+          "url": "url"
+        }
+      },
+      "attribution": "GD音乐台(music.gdstudio.xyz)",
+      "usage": "CC BY-NC 4.0；仅限学习参考，禁止商用。"
+    }
+  ]
+}

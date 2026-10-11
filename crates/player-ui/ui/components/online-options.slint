@@ -1,0 +1,23 @@
+import { Button, CheckBox } from "std-widgets.slint";
+import { Theme } from "../theme.slint";
+export component OnlineOptions inherits VerticalLayout {
+    in property <bool> music-enabled; in property <bool> lyrics-enabled; in property <[string]> directories;
+    callback control(string,string);
+    spacing: 14px;
+    Text { text: "联网服务"; color: Theme.text; font-size: 20px; font-weight: 600; height: 30px; }
+    CheckBox { text: "联网搜索歌曲"; checked: root.music-enabled; toggled => {root.control("online-music-enabled",self.checked ? "yes" : "no");} }
+    CheckBox { text: "联网搜索歌词"; checked: root.lyrics-enabled; toggled => {root.control("online-lyrics-enabled",self.checked ? "yes" : "no");} }
+    Text { text: "读取 Android 共用 JSON v1 配置。目录内可放多份 JSON，API id 不可重复；重读失败保留原配置。"; color: Theme.muted; wrap: word-wrap; min-height: 45px; }
+    for name[index] in ["API JSON 配置目录", "歌曲下载目录", "歌词缓存目录", "专辑图缓存目录", "串流缓存目录"]: Rectangle { height: 96px; background: Theme.surface; border-radius: 10px;
+        VerticalLayout { padding: 12px; spacing: 5px;
+            Text { text: name; color: Theme.text; height: 22px; font-weight: 600; }
+            HorizontalLayout { spacing: 8px; height: 36px;
+                Text { text: root.directories[index]; color: Theme.muted; overflow: elide; horizontal-stretch: 1; vertical-alignment: center; }
+                if index == 0: Button { text: "打开文件夹"; clicked => {root.control("online-directory-open", "");} }
+                Button { text: "选择目录"; clicked => {root.control("online-directory","" + index);} }
+                Button { text: "恢复默认"; clicked => {root.control("online-directory-reset","" + index);} }
+            }
+        }
+    }
+    Button { text: "重读 API 配置"; clicked => {root.control("online-reload","");} }
+}

@@ -131,6 +131,53 @@ fn rows(
 }
 
 fn project(window: &AppWindow, state: &ShellViewModel) {
+    let online = &state.online;
+    if window.get_online_revision() != online.revision as i32 {
+        window.set_online_tracks(rows(window.get_online_tracks(), &online.rows));
+        window.set_online_revision(online.revision as i32);
+    }
+    if !same_strings(&window.get_online_providers(), &online.providers) {
+        window.set_online_providers(strings(&online.providers));
+    }
+    if !same_strings(&window.get_online_sources(), &online.sources) {
+        window.set_online_sources(strings(&online.sources));
+    }
+    if !same_strings(&window.get_online_history(), &online.history) {
+        window.set_online_history(strings(&online.history));
+    }
+    if !same_strings(&window.get_online_qualities(), &online.qualities) {
+        window.set_online_qualities(strings(&online.qualities));
+    }
+    if !same_strings(&window.get_online_directories(), &online.directories) {
+        window.set_online_directories(strings(&online.directories));
+    }
+    window.set_online_provider(online.provider);
+    window.set_online_source(online.source);
+    window.set_online_selected(online.selected);
+    window.set_online_keep_history(online.keep_history);
+    window.set_online_music_enabled(online.music_enabled);
+    window.set_online_lyrics_enabled(online.lyrics_enabled);
+    window.set_online_busy(online.busy);
+    window.set_online_more(online.more);
+    window.set_online_lyric_mode(online.lyric_mode);
+    window.set_online_download(online.download);
+    window.set_online_download_play(online.download_play);
+    if window.get_online_query().as_str() != online.query {
+        window.set_online_query(online.query.as_str().into());
+    }
+    if window.get_online_message().as_str() != online.message {
+        window.set_online_message(online.message.as_str().into());
+    }
+    if window
+        .get_online_quality_enabled()
+        .iter()
+        .collect::<Vec<_>>()
+        != online.quality_enabled
+    {
+        window.set_online_quality_enabled(
+            Rc::new(VecModel::from(online.quality_enabled.clone())).into(),
+        );
+    }
     window.set_window_controls_left(state.window_controls_left);
     let fonts = &state.fonts;
     if window.get_font_revision() != fonts.revision as i32 {
@@ -245,6 +292,7 @@ fn project(window: &AppWindow, state: &ShellViewModel) {
         );
     }
     window.set_page(state.page);
+    window.set_can_go_back(state.can_go_back);
     window.set_selected_id(state.selected_id);
     window.set_selected_title(state.selected_title.as_str().into());
     window.set_selected_artist(state.selected_artist.as_str().into());

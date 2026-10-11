@@ -1,0 +1,25 @@
+{
+  "removed": [
+    "target/debug/yyplayer.exe",
+    "target/debug/deps/cache.obj",
+    "target/release/deps/cache.obj",
+    "target/release/yyplayer.pdb",
+    "target/fixtures/data.bin",
+    "third_party/mpv/windows-x64/runtime.7z",
+    "third_party/mpv/windows-x64/libmpv.dll.a"
+  ],
+  "preserved": [
+    "Cargo.toml",
+    "src/main.rs",
+    "docs/status.md",
+    "target/release/yyplayer.exe",
+    "target/release/runtime/libmpv-2.dll",
+    "target/release/config/cloud_api/custom.json",
+    "target/debug/config/cloud_api/custom.json",
+    "third_party/mpv/windows-x64/libmpv-2.dll",
+    "third_party/mpv/windows-x64/include/client.h"
+  ],
+  "fixture": "E:\\SourceFiles\\rust\\yyplayer\\target\\cleanup-qa-645896ed136b439ba8abc90e52f51ad7",
+  "result": "PASS",
+  "whatif_unchanged": true
+}

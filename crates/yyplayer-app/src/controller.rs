@@ -29,15 +29,22 @@ mod library_controller;
 mod library_service;
 #[path = "music_assets.rs"]
 mod music_assets;
+#[path = "navigation.rs"]
+mod navigation;
+#[path = "online/mod.rs"]
+mod online;
+#[path = "online_controller.rs"]
+mod online_controller;
 #[path = "thumbnails.rs"]
 mod thumbnails;
 #[path = "video_controller.rs"]
 mod video_controller;
 
 pub struct AppController {
+    online: online_controller::State,
     engine: MpvEngine,
     platform: PlatformInfo,
-    page: i32,
+    navigation: navigation::History,
     selected_id: i32,
     search: String,
     video_search: String,
@@ -116,9 +123,10 @@ impl AppController {
     pub fn new(engine: MpvEngine, platform: PlatformInfo) -> Self {
         let settings = Settings::default();
         Self {
+            online: Default::default(),
             engine,
             platform,
-            page: 0,
+            navigation: Default::default(),
             selected_id: 0,
             search: String::new(),
             video_search: String::new(),
@@ -200,12 +208,20 @@ impl AppController {
         let mut controller = Self::new(engine, platform);
         controller.preview = false;
         controller.font_task = Some(font_service::Task::start());
-        controller.page = 0;
         controller.thumbnails = Some(thumbnails::Thumbnails::start());
         controller.status = warning;
         controller.shortcut_draft = settings.shortcuts.clone();
         controller.decode_draft = settings.global.clone();
         controller.settings = settings;
+        controller.online.service = Some(online::Service::start());
+        if let Some(service) = &controller.online.service {
+            service.set_permissions(
+                controller.settings.online.music_enabled,
+                controller.settings.online.lyrics_enabled,
+            );
+        }
+        controller.online.download_play = true;
+        controller.online_reload();
         controller.backgrounds = Some(backgrounds::Backgrounds::start());
         for kind in 0..2 {
             controller.request_background(kind);
@@ -238,19 +254,15 @@ impl AppController {
     pub fn dispatch(&mut self, action: UiAction) {
         match action {
             UiAction::Navigate(page) => {
-                self.cancel_hold();
                 // Page 1 is the player session; the sidebar opens page 5 (video library).
-                let page = if page == 1 { 5 } else { page.clamp(0, 5) };
-                if self.page == 1 && page != 1 {
-                    self.suspend_video();
+                let page = if page == 1 { 5 } else { page.clamp(0, 6) };
+                if page == 6 && self.online.lyric_mode {
+                    self.online_control("online-music-mode", "");
                 }
-                self.auto_page = false;
-                self.page = page;
-                self.panel_open = false;
-                self.settings_revision += 1;
+                self.visit_page(page);
             }
             UiAction::Search(query) => {
-                if self.page == 5 {
+                if self.navigation.current() == 5 {
                     self.video_search = query;
                     self.refresh_video();
                 } else {
@@ -299,6 +311,58 @@ impl AppController {
             }
         }
     }
+    fn visit_page(&mut self, page: i32) {
+        let previous = self.navigation.current();
+        if self.navigation.visit(page) {
+            self.page_changed(previous);
+        }
+    }
+    fn go_back(&mut self) {
+        let previous = self.navigation.current();
+        if !self.navigation.back() {
+            return;
+        }
+        self.page_changed(previous);
+        if self.navigation.current() == 1 && !self.video_session {
+            let source = self.queue.get(self.selected_id as usize);
+            let snapshot = self.engine.snapshot();
+            let resumable = self
+                .video_resume
+                .as_ref()
+                .is_some_and(|(saved, _)| Some(saved) == source)
+                || snapshot.video && snapshot.source.as_ref() == source && source.is_some();
+            if resumable {
+                // The popped page is already current. Loading it cannot push
+                // Settings back onto the history or create a return loop.
+                self.load_index(self.selected_id);
+            }
+        }
+    }
+    fn page_changed(&mut self, previous: i32) {
+        self.cancel_hold();
+        if previous == 6 && self.online.busy {
+            if let Some(service) = &self.online.service {
+                self.online.ids[0] = service.cancel(0);
+                self.online.ids[1] = service.cancel(1);
+                self.online.ids[3] = service.cancel(3);
+            }
+            self.online.busy_lanes = [false; 4];
+            self.online.busy = false;
+        }
+        if previous == 1 {
+            if self.video_session {
+                self.suspend_video();
+            } else {
+                self.leave_fullscreen();
+            }
+        } else if previous == 4 {
+            self.leave_fullscreen();
+        }
+        self.auto_page = false;
+        self.expanded = self.navigation.current() == 4;
+        self.panel_open = false;
+        self.settings_revision += 1;
+    }
     fn send(&mut self, command: PlaybackCommand) {
         if let Err(error) = self.engine.submit(command) {
             self.status = error.to_string();
@@ -315,7 +379,7 @@ impl AppController {
         }
     }
     pub fn request_library_covers(&mut self, first: i32, count: i32) {
-        if self.page != 0 || self.preview {
+        if self.navigation.current() != 0 || self.preview {
             return;
         }
         if let Some(thumbnails) = &mut self.thumbnails {
@@ -350,6 +414,23 @@ impl AppController {
         let Some(source) = self.queue.get(index as usize).cloned() else {
             return;
         };
+        if self.online.playing_source.as_ref() == Some(&source) {
+            if self.online.streaming
+                && (!self.settings.online.music_enabled
+                    || matches!(&source, MediaSource::Url(_)) && self.online.proxy.is_none())
+            {
+                self.status = "请开启联网音乐并从搜索结果重新播放".into();
+                return;
+            }
+            self.send(PlaybackCommand::Load {
+                source,
+                decode: self.settings.global.clone(),
+                resume: None,
+                video: false,
+            });
+            return;
+        }
+        self.online_local_open();
         let video = !matches!(&source, MediaSource::Local(p) if player_core::library::is_audio(p));
         let restore = self
             .video_resume
@@ -374,13 +455,13 @@ impl AppController {
         self.send(PlaybackCommand::Pause);
         self.read_assets(&source);
         self.apply_eq();
-        self.page = if video {
+        self.visit_page(if video {
             1
         } else if self.expanded {
             4
         } else {
             0
-        };
+        });
         self.pending_load = true;
         self.auto_page = true;
         self.status = String::new();
@@ -551,6 +632,9 @@ impl AppController {
         self.reload();
     }
     fn control(&mut self, action: &str, value: &str) {
+        if self.online_control(action, value) {
+            return;
+        }
         if self.font_control(action, value) {
             return;
         }
@@ -574,14 +658,20 @@ impl AppController {
                 }
             }
             "stop" => {
+                if self.online.streaming {
+                    self.queue.clear();
+                    self.queue_version += 1;
+                    self.selected_id = 0;
+                }
+                self.online_local_open();
                 self.cancel_hold();
                 self.pending_load = false;
                 self.auto_page = false;
                 self.video_session = false;
                 self.video_resume = None;
                 self.send(PlaybackCommand::Stop);
-                if self.page == 1 {
-                    self.page = 5;
+                if self.navigation.current() == 1 {
+                    self.visit_page(5);
                     self.leave_fullscreen();
                 }
             }
@@ -723,14 +813,9 @@ impl AppController {
                 self.settings_revision += 1;
             }
             "settings" => {
-                if self.page == 1 {
-                    self.suspend_video();
-                }
-                self.cancel_hold();
-                self.page = 3;
-                self.panel_open = false;
-                self.settings_revision += 1;
+                self.visit_page(3);
             }
+            "page-back" => self.go_back(),
             "video" => {
                 if self.video_resume.is_some()
                     || (self.engine.snapshot().source.is_some() && self.engine.snapshot().video)
@@ -863,8 +948,7 @@ impl AppController {
         }
         if mode == 2 && self.window_mode != 2 {
             self.prior_window_mode = self.window_mode;
-            self.page = if self.engine.snapshot().source.is_some() && !self.engine.snapshot().video
-            {
+            let page = if self.engine.snapshot().source.is_some() && !self.engine.snapshot().video {
                 self.expanded = true;
                 4
             } else {
@@ -872,6 +956,7 @@ impl AppController {
                 self.send(PlaybackCommand::SetVideoOutput(true));
                 1
             };
+            self.visit_page(page);
         }
         self.window_mode = mode;
         self.window_request = Some(mode);
@@ -895,6 +980,15 @@ impl AppController {
                 return true;
             }
             return false;
+        }
+        if chord == "Alt+Left"
+            && self.settings.shortcuts.action(chord).is_none()
+            && self.navigation.can_go_back()
+        {
+            if !repeat {
+                self.go_back();
+            }
+            return true;
         }
         if chord == "Escape" && (self.window_mode == 2 || self.panel_open) {
             if !repeat {
@@ -972,27 +1066,28 @@ impl AppController {
         for reply in replies {
             match reply {
                 DialogReply::Open(paths) => {
-                    if self.page == 5 {
+                    if self.navigation.current() == 5 {
                         self.prepare_video_paths(false, paths);
                     } else {
                         self.open_paths(paths);
                     }
                 }
                 DialogReply::MediaPaths(files, folders) => {
-                    let video_library = self.page == 5 || self.page == 1;
+                    let video_library =
+                        self.navigation.current() == 5 || self.navigation.current() == 1;
                     if video_library {
                         self.import_video_paths(true, folders);
                     } else {
                         self.import_library_paths(true, folders);
                     }
                     if !files.is_empty() {
-                        if self.page == 5 {
+                        if self.navigation.current() == 5 {
                             self.prepare_video_paths(false, files);
                         } else {
                             self.open_paths(files);
                         }
                     } else {
-                        self.page = if video_library { 5 } else { 0 };
+                        self.visit_page(if video_library { 5 } else { 0 });
                     }
                 }
                 DialogReply::Subtitle(path) => self.send(PlaybackCommand::AddSubtitle(path)),
@@ -1023,6 +1118,7 @@ impl AppController {
         }
         let changed = self.engine.refresh();
         self.poll_assets();
+        self.poll_online();
         self.poll_library();
         self.poll_video();
         if self.thumbnails.as_mut().is_some_and(|t| t.poll()) {
@@ -1086,13 +1182,13 @@ impl AppController {
                         self.video_session = false;
                         self.send(PlaybackCommand::SetVideoOutput(false));
                     }
-                    self.page = if snapshot.video {
+                    self.visit_page(if snapshot.video {
                         1
                     } else if self.expanded {
                         4
                     } else {
                         0
-                    };
+                    });
                     self.auto_page = false;
                 }
             }
@@ -1184,12 +1280,13 @@ impl AppController {
             "下一帧",
         ];
         ShellViewModel {
+            online: self.online_view(),
             audio: self.audio_view(),
             library: self.library_view(),
             video_library: self.video_view(),
             video_renderer_requested: self.video_session || snapshot.video_output_enabled,
             can_resume_video: self.video_resume.is_some(),
-            search_query: if self.page == 5 {
+            search_query: if self.navigation.current() == 5 {
                 self.video_search.clone()
             } else {
                 self.search.clone()
@@ -1202,7 +1299,8 @@ impl AppController {
                 self.platform.kind,
                 player_platform::PlatformKind::MacOs
             ),
-            page: self.page,
+            page: self.navigation.current(),
+            can_go_back: self.navigation.can_go_back(),
             selected_id: self.selected_id,
             selected_title: if !self.assets.title.is_empty() {
                 self.assets.title.clone()
@@ -1212,7 +1310,10 @@ impl AppController {
                 selected
                     .map(|track| track.title.clone())
                     .unwrap_or_else(|| {
-                        if self.page == 0 || self.page == 4 {
+                        if self.navigation.current() == 0
+                            || self.navigation.current() == 4
+                            || self.navigation.current() == 6
+                        {
                             "尚未选择曲目".into()
                         } else {
                             "视频库".into()
@@ -1413,6 +1514,13 @@ impl AppController {
         &mut self.engine
     }
     pub fn finish_services(&mut self) {
+        if let Some(service) = self.online.service.take() {
+            service.finish();
+        }
+        self.online_stop_proxy();
+        for proxy in self.online.retired.drain(..) {
+            proxy.finish();
+        }
         self.cancel_hold();
         if self.settings_dirty.is_some() || self.history_dirty.is_some() {
             self.save_with_notice(self.settings_dirty.is_some());
@@ -1471,5 +1579,81 @@ fn format_time(duration: Option<Duration>) -> String {
                 format!("{}:{:02}", seconds / 60, seconds % 60)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod navigation_tests {
+    use super::*;
+
+    fn controller() -> AppController {
+        AppController::new(MpvEngine::default(), player_platform::current())
+    }
+
+    #[test]
+    fn settings_returns_to_online_search_without_resetting_the_query_or_mode() {
+        let mut c = controller();
+        c.dispatch(UiAction::Navigate(6));
+        c.online.query = "保留搜索条件".into();
+        c.online.lyric_mode = true;
+        c.online.busy = true;
+        c.control("settings", "");
+        assert_eq!(c.view_model().page, 3);
+        assert!(!c.online.busy);
+        c.control("settings", ""); // No duplicate visit for the current page.
+        c.control("page-back", "");
+        let view = c.view_model();
+        assert_eq!(view.page, 6);
+        assert_eq!(view.online.query, "保留搜索条件");
+        assert!(view.online.lyric_mode);
+        c.control("page-back", "");
+        assert_eq!(c.view_model().page, 0);
+        assert!(!c.view_model().can_go_back);
+        c.control("page-back", "");
+        assert_eq!(c.view_model().page, 0);
+    }
+
+    #[test]
+    fn lyrics_and_settings_returns_follow_the_route_and_restore_expanded_state() {
+        let mut c = controller();
+        c.dispatch(UiAction::Navigate(6));
+        c.control("music-detail", "");
+        c.dispatch(UiAction::Navigate(3));
+        c.dispatch(UiAction::Navigate(2));
+        for page in [3, 4, 6, 0] {
+            c.control("page-back", "");
+            assert_eq!(c.view_model().page, page);
+            assert_eq!(c.expanded, page == 4);
+        }
+        assert!(!c.view_model().can_go_back);
+        c.dispatch(UiAction::Navigate(6));
+        c.control("music-detail", "");
+        c.native_window_mode(true, false);
+        c.control("page-back", "");
+        assert_eq!(c.view_model().page, 6);
+        assert_eq!(c.window_mode, 0);
+        assert_eq!(c.take_window_request(), Some(0));
+    }
+
+    #[test]
+    fn back_shortcut_consumes_one_visit_and_does_not_repeat_or_replace_escape() {
+        let mut c = controller();
+        c.dispatch(UiAction::Navigate(6));
+        c.dispatch(UiAction::Navigate(3));
+        assert!(c.key("Alt+Left", true, true, true));
+        assert_eq!(c.view_model().page, 3);
+        assert!(c.key("Alt+Left", true, false, true));
+        assert_eq!(c.view_model().page, 6);
+        assert!(c.key("Alt+Left", true, true, true));
+        assert_eq!(c.view_model().page, 6);
+        c.panel_open = true;
+        assert!(c.key("Escape", true, false, false));
+        assert!(!c.panel_open);
+        assert_eq!(c.view_model().page, 6);
+        assert!(!c.key("Alt+Left", false, false, true));
+        // An existing user binding keeps its meaning, including input blocking.
+        c.settings.shortcuts.seek_back = "Alt+Left".into();
+        assert!(!c.key("Alt+Left", true, false, true));
+        assert_eq!(c.view_model().page, 6);
     }
 }

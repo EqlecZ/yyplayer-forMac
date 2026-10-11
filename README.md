@@ -9,7 +9,8 @@
 - 音频输出：设备选择，Windows WASAPI 与 Linux PipeWire / PulseAudio / ALSA 输出，共享 / 优先独占 / 严格独占策略与实际状态；默认不强制升采样，不启用额外音效。
 - 均衡器：手动调节、预设导入 / 导出，支持全局、设备和单文件设置，音视频共用。
 - 音乐库：添加歌曲或递归扫描目录，搜索、筛选、重扫，显示标签和封面；移除记录不删除原文件。
-- 歌曲大页面：点击左下封面展开，点击封面返回音乐库；自动加载同名 LRC 或内嵌歌词，也可手动导入 LRC / TXT。
+- 歌曲大页面：点击左下封面展开，点击封面返回上一页；自动加载同名 LRC 或内嵌歌词，也可手动导入 LRC / TXT。
+- 页面返回：侧栏「返回上一页」、设置返回、歌词封面与视频页返回共用本次会话的页面历史栈；默认可用 Alt+Left 逐层返回，搜索 → 设置 → 返回保留搜索条件。
 - 视频库：添加目录或单个视频，搜索、筛选、重扫与移除；点击后进入播放器，返回库保留本次观看位置。
 - 视频界面：按需初始化 libmpv 视频渲染器；窗口、最大化与全屏，控件自动隐藏；可配置快捷键，方向键默认调音量、短按跳转 5 秒、长按临时 3 倍速。
 - 播放设置：查看媒体与实际解码器信息，按全局、文件夹或单文件设置解码方式。
@@ -104,3 +105,6 @@ GitHub Actions 的 **Linux compatibility compile matrix** 仅手动触发。默�
 [更新日志](CHANGELOG.md) · [开发指南](CONTRIBUTING.md) · [完整规划](docs/DEVELOPMENT_PLAN.md) · [实际状态与验收](docs/STATUS.md) · [GitHub 发布说明](docs/PUBLISHING.md)
 
 项目自身源码与原创 UI 资源采用 **GPL-3.0-only**，见 [LICENSE](LICENSE)。第三方组件保留各自许可，见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)。源码主分支为 `master`；本次 Windows/Linux 共用代码在 `dev-linux` 准备合入主分支。开发分支用于组织变更，不决定编译平台；开发包不代替发行与硬件资格验收。
+## 音乐联网搜索
+
+2026-10-09 `dev-api`：侧栏新增独立音乐联网搜索，移植 Android JSON v1 API、历史、来源／音质、封面、联网歌词、下载与libmpv串流。设置 → 联网服务分别开启歌曲／歌词，设置API、歌曲下载、歌词、图片与串流缓存目录。可把同一份Android JSON放到exe旁 `config/cloud_api` 并重读；无文件时使用同一份GD示例。详见[使用与配置](docs/ONLINE_API.md)、[验收](docs/validation/online-api.md)。

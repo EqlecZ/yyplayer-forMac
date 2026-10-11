@@ -38,6 +38,7 @@ impl DecodeOptions {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
+    pub online: crate::online::OnlineSettings,
     pub version: u32,
     pub global: DecodeOptions,
     #[serde(with = "crate::path_serde::map")]
@@ -59,6 +60,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            online: Default::default(),
             version: 1,
             global: DecodeOptions::default(),
             folders: BTreeMap::new(),
@@ -78,6 +80,7 @@ impl Default for Settings {
 }
 impl Settings {
     pub fn validate(&self) -> Result<(), String> {
+        self.online.validate()?;
         if self.version != 1 {
             return Err(format!("不支持设置版本 {}", self.version));
         }

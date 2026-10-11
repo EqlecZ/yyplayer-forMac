@@ -87,10 +87,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match action.as_str() {
                 "music-toggle" => state.page = if state.page == 4 { 0 } else { 4 },
                 "music-detail" => state.page = 4,
-                "music-browse" => state.page = 0,
+                "music-browse" | "page-back" => state.page = 0,
                 "panel" => state.panel_open = !state.panel_open,
                 _ => {}
             }
+            state.can_go_back = state.page == 4;
             project(&state);
         }
     }));

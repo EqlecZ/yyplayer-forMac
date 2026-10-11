@@ -1,0 +1,32 @@
+[
+  {
+    "Path": "target/release/yyplayer.exe",
+    "Bytes": 27524096,
+    "SHA256": "613062B307F1351052D4BD6102C482C3CAE76A8AC1B8371B71138EE7BDD0BDED"
+  },
+  {
+    "Path": "third_party/mpv/windows-x64/libmpv-2.dll",
+    "Bytes": 120816640,
+    "SHA256": "0D5B9DBECB73E179EF39DC94314FF8905FAB926A80F8D60A2367D824B7254E2E"
+  },
+  {
+    "Path": "third_party\\mpv\\windows-x64\\include\\mpv\\client.h",
+    "Bytes": 86136,
+    "SHA256": "1ACF99EE77C8C2A6F1D1993BD81BBC8A91D27FB5924E80171670E6139A4BD353"
+  },
+  {
+    "Path": "third_party\\mpv\\windows-x64\\include\\mpv\\render_gl.h",
+    "Bytes": 7328,
+    "SHA256": "48662C0ED9872A14DD9E1684105C97F69F94A0414709C254C5D372ADC41D2E69"
+  },
+  {
+    "Path": "third_party\\mpv\\windows-x64\\include\\mpv\\render.h",
+    "Bytes": 34271,
+    "SHA256": "192691941602052F00DF0587F126246C48785A1CF21DE68D22A92EA1908D1C55"
+  },
+  {
+    "Path": "third_party\\mpv\\windows-x64\\include\\mpv\\stream_cb.h",
+    "Bytes": 9589,
+    "SHA256": "188E58B6D14383E15A5DFFDC4ECEBBDFBF2E412B9C099FF21B571F747A8CE32D"
+  }
+]

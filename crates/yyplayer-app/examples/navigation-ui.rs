@@ -100,7 +100,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 6=>w.window().set_size(slint::LogicalSize::new(1460.,920.)),
                 7=>{let mut m=model.borrow_mut();m.panel_open=false;m.appearance.dark=false;m.appearance.reduce_motion=true;ui_projection(&w,&m);drop(m);click(&w,100.,size.height-152.);},
                 8=>{if page!=3 {return Err("Reduced-motion settings click failed".into());} let mut m=model.borrow_mut();m.appearance.design=0;ui_projection(&w,&m);drop(m);click(&w,100.,156.);},
-                9=>{if page!=0 {return Err("Simple-mode music click failed".into());} std::fs::write("target/navigation-ui/results.json",serde_json::to_vec_pretty(&records)?)?;success.set(true);println!("PASS: actual navigation / empty-directory button / right options / margins / three sizes / reduced motion / simple theme");slint::quit_event_loop()?;},
+                9=>{if page!=0 {return Err("Simple-mode music click failed".into());}click(&w,100.,256.);},
+                10=>{if page!=6 {return Err("Independent online search navigation click failed".into());} std::fs::write("target/navigation-ui/results.json",serde_json::to_vec_pretty(&records)?)?;success.set(true);println!("PASS: actual navigation / empty-directory button / right options / margins / three sizes / reduced motion / simple theme");slint::quit_event_loop()?;},
                 _=>unreachable!(),
             }
             Ok(())

@@ -1,6 +1,6 @@
 # Windows 源码依赖许可元数据
 
-2026-10-02：来自 Cargo.lock + cargo metadata，筛选 x86_64-pc-windows-msvc、workspace normal / build 可达依赖。仅记录锁定源码元数据，feature 可能包含开发依赖合并结果；不包括 libmpv DLL 内部组件，也不代表二进制分发的完整 notices 或兼容性审计。
+2026-10-10：来自当前 Cargo.lock + cargo metadata --filter-platform x86_64-pc-windows-msvc，筛选 workspace normal / build 可达依赖。仅记录锁定源码元数据，feature 可能包含开发依赖合并结果；不包括 libmpv DLL 内部组件，也不代表二进制分发的完整 notices 或兼容性审计。
 
 | 包 | 锁定版本 | 上游 license 表达式 |
 | --- | --- | --- |
@@ -26,6 +26,7 @@
 | av1-grain | 0.2.5 | BSD-2-Clause |
 | avif-serialize | 0.8.9 | BSD-3-Clause |
 | base64 | 0.22.1 | MIT OR Apache-2.0 |
+| base64 | 0.23.1 | MIT OR Apache-2.0 |
 | bincode | 2.0.1 | MIT |
 | bindgen | 0.72.1 | BSD-3-Clause |
 | bit_field | 0.10.3 | Apache-2.0/MIT |
@@ -100,6 +101,7 @@
 | form_urlencoded | 1.2.2 | MIT OR Apache-2.0 |
 | generic-array | 0.14.7 | MIT |
 | getopts | 0.2.24 | MIT OR Apache-2.0 |
+| getrandom | 0.2.17 | MIT OR Apache-2.0 |
 | getrandom | 0.4.3 | MIT OR Apache-2.0 |
 | gif | 0.14.2 | MIT OR Apache-2.0 |
 | gl_generator | 0.14.0 | Apache-2.0 |
@@ -117,6 +119,8 @@
 | hashbrown | 0.17.1 | MIT OR Apache-2.0 |
 | heck | 0.5.0 | MIT OR Apache-2.0 |
 | htmlparser | 0.2.1 | MIT OR Apache-2.0 |
+| http | 1.5.0 | MIT OR Apache-2.0 |
+| httparse | 1.10.1 | MIT OR Apache-2.0 |
 | i-slint-backend-selector | 1.17.1 | GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0 |
 | i-slint-backend-testing | 1.17.1 | GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0 |
 | i-slint-backend-winit | 1.17.1 | GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0 |
@@ -213,10 +217,6 @@
 | pin-utils | 0.1.0 | MIT OR Apache-2.0 |
 | pin-weak | 1.1.0 | MIT |
 | pkg-config | 0.3.34 | MIT OR Apache-2.0 |
-| player-core | 0.0.1 | GPL-3.0-only |
-| player-mpv | 0.0.1 | GPL-3.0-only |
-| player-platform | 0.0.1 | GPL-3.0-only |
-| player-ui | 0.0.1 | GPL-3.0-only |
 | png | 0.18.1 | MIT OR Apache-2.0 |
 | polycool | 0.4.0 | MIT OR Apache-2.0 |
 | portable-atomic | 1.15.0 | Apache-2.0 OR MIT |
@@ -249,12 +249,17 @@
 | resvg | 0.47.0 | Apache-2.0 OR MIT |
 | rfd | 0.15.4 | MIT |
 | rgb | 0.8.53 | MIT |
+| ring | 0.17.14 | Apache-2.0 AND ISC |
 | rowan | 0.16.1 | MIT OR Apache-2.0 |
 | roxmltree | 0.21.1 | MIT OR Apache-2.0 |
 | rspolib | 0.1.2 | MIT |
 | rustc-hash | 1.1.0 | Apache-2.0/MIT |
 | rustc-hash | 2.1.3 | Apache-2.0 OR MIT |
 | rustc_version | 0.4.1 | MIT OR Apache-2.0 |
+| rustls | 0.23.45 | Apache-2.0 OR ISC OR MIT |
+| rustls-pki-types | 1.15.1 | MIT OR Apache-2.0 |
+| rustls-platform-verifier | 0.7.1 | MIT OR Apache-2.0 |
+| rustls-webpki | 0.103.15 | ISC |
 | rustversion | 1.0.23 | MIT OR Apache-2.0 |
 | rustybuzz | 0.20.1 | MIT |
 | scoped-tls-hkt | 0.1.5 | MIT/Apache-2.0 |
@@ -294,6 +299,7 @@
 | strict-num | 0.1.1 | MIT |
 | strum | 0.28.0 | MIT |
 | strum_macros | 0.28.0 | MIT |
+| subtle | 2.6.1 | BSD-3-Clause |
 | svgtypes | 0.16.1 | Apache-2.0 OR MIT |
 | swash | 0.2.10 | Apache-2.0 OR MIT |
 | syn | 2.0.119 | MIT OR Apache-2.0 |
@@ -333,9 +339,13 @@
 | unicode-vo | 0.1.0 | MIT/Apache-2.0 |
 | unicode-width | 0.2.2 | MIT OR Apache-2.0 |
 | unicode-xid | 0.2.6 | MIT OR Apache-2.0 |
+| untrusted | 0.9.0 | ISC |
 | unty | 0.0.4 | MIT OR Apache-2.0 |
+| ureq | 3.4.2 | MIT OR Apache-2.0 |
+| ureq-proto | 0.6.4 | MIT OR Apache-2.0 |
 | url | 2.5.8 | MIT OR Apache-2.0 |
 | usvg | 0.47.0 | Apache-2.0 OR MIT |
+| utf8-zero | 0.8.1 | MIT OR Apache-2.0 |
 | utf8_iter | 1.0.4 | Apache-2.0 OR MIT |
 | uuid | 1.26.1 | Apache-2.0 OR MIT |
 | v_frame | 0.3.9 | BSD-2-Clause |
@@ -347,6 +357,7 @@
 | wasm-bindgen-macro-support | 0.2.129 | MIT OR Apache-2.0 |
 | wasm-bindgen-shared | 0.2.129 | MIT OR Apache-2.0 |
 | webbrowser | 1.2.4 | MIT OR Apache-2.0 |
+| webpki-roots | 1.0.9 | CDLA-Permissive-2.0 |
 | weezl | 0.1.12 | MIT OR Apache-2.0 |
 | windows | 0.62.2 | MIT OR Apache-2.0 |
 | windows-collections | 0.3.2 | MIT OR Apache-2.0 |
@@ -373,12 +384,12 @@
 | yazi | 0.2.1 | Apache-2.0 OR MIT |
 | yoke | 0.8.3 | Unicode-3.0 |
 | yoke-derive | 0.8.4 | Unicode-3.0 |
-| yyplayer-app | 0.0.1 | GPL-3.0-only |
 | zeno | 0.3.3 | Apache-2.0 OR MIT |
 | zerocopy | 0.8.59 | BSD-2-Clause OR Apache-2.0 OR MIT |
 | zerocopy-derive | 0.8.59 | BSD-2-Clause OR Apache-2.0 OR MIT |
 | zerofrom | 0.1.8 | Unicode-3.0 |
 | zerofrom-derive | 0.1.8 | Unicode-3.0 |
+| zeroize | 1.9.1 | Apache-2.0 OR MIT |
 | zerotrie | 0.2.5 | Unicode-3.0 |
 | zerovec | 0.11.8 | Unicode-3.0 |
 | zerovec-derive | 0.11.6 | Unicode-3.0 |

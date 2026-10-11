@@ -81,6 +81,11 @@ def common(root, binary):
     shutil.copy2(ROOT / "LICENSE", docs / "copyright")
     shutil.copytree("/usr/share/common-licenses", root / "usr/share/common-licenses", symlinks=False)
     shutil.copy2(ROOT / "docs/LINUX.md", docs / "LINUX.md")
+    shutil.copy2(ROOT / "docs/ONLINE_API.md", docs / "ONLINE_API.md")
+    cloud_api = root / "usr/share/yyplayer/cloud_api"
+    cloud_api.mkdir(parents=True, exist_ok=True)
+    for name in ("README.md", "example-gd.json"):
+        shutil.copy2(ROOT / "config/cloud_api" / name, cloud_api / name)
     return docs
 
 def dependencies(binary):

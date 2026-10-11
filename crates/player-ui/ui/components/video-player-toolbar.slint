@@ -4,9 +4,11 @@ export component VideoPlayerToolbar inherits Rectangle {
     in property <string> title;
     in property <bool> panel-open;
     in property <int> window-mode;
+    in property <bool> can-go-back;
     callback open-file(); callback browse(); callback control(string,string);
     HorizontalLayout {
         padding: 0px; padding-left: 20px; padding-right: 20px; spacing: 12px;
+        VerticalLayout { width: 70px; alignment: center; Button { text: "返回"; enabled: root.can-go-back; clicked => { root.control("page-back", ""); } } }
         Text { text: root.title; color: Theme.text; font-size: 14px; font-weight: 600; vertical-alignment: center; overflow: elide; horizontal-stretch: 1; }
         VerticalLayout { width: 100px; alignment: center; Button { text: "打开文件"; clicked => { root.open-file(); } } }
         VerticalLayout { width: 85px; alignment: center; Button { text: "视频库"; clicked => { root.browse(); } } }

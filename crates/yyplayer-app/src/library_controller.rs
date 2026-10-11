@@ -54,6 +54,13 @@ impl AppController {
                             t.invalidate();
                         }
                         self.library_songs = songs;
+                        for song in &mut self.library_songs {
+                            if let Some(metadata) = self.settings.online.downloads.get(&song.path) {
+                                song.title = metadata.title.clone();
+                                song.artist = metadata.artist.clone();
+                                song.album = metadata.album.clone();
+                            }
+                        }
                         if id == self.library_scan {
                             self.library_busy = false;
                         }

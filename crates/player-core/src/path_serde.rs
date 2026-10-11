@@ -36,6 +36,8 @@ fn decode(value: String) -> Result<PathBuf, String> {
         }
         return Ok(value.into());
     };
+    #[cfg(not(unix))]
+    let _ = encoded;
     #[cfg(unix)]
     if let Some(hex) = encoded.strip_prefix("unix:") {
         use std::os::unix::ffi::OsStringExt;
