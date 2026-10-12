@@ -74,7 +74,7 @@ pub enum Event {
     Downloaded(Song, Result<PathBuf>),
     DownloadComplete(PathBuf),
     Lyrics(Song, Result<String>),
-    Artwork(Song, Result<Option<(u32, u32, Vec<u8>)>>),
+    Artwork(Song, Result<Option<(u32, u32, Vec<u8>)>>, Option<u32>),
     Progress(u64, Option<u64>),
     Directory(usize, PathBuf),
     DirectoryOpened(Result<()>),
@@ -83,6 +83,14 @@ pub struct Reply {
     pub lane: usize,
     pub id: u64,
     pub event: Event,
+}
+fn artwork_event(song: Song, art: Result<Option<(u32, u32, Vec<u8>)>>) -> Event {
+    let color = art
+        .as_ref()
+        .ok()
+        .and_then(|a| a.as_ref())
+        .and_then(|(_, _, pixels)| super::music_assets::cover_color(pixels));
+    Event::Artwork(song, art, color)
 }
 struct Work {
     lane: usize,
@@ -251,7 +259,7 @@ impl Service {
                                     let _ = sibling(path, "jpg", &jpg.into_inner());
                                 }
                             }
-                            send(Event::Artwork(s, art));
+                            send(artwork_event(s, art));
                             if let Some(path) = local {
                                 send(Event::DownloadComplete(path));
                             }
@@ -274,7 +282,7 @@ impl Service {
                             });
                             send(Event::Lyrics(s, result));
                         }
-                        Job::Artwork(p, s, dir) => send(Event::Artwork(
+                        Job::Artwork(p, s, dir) => send(artwork_event(
                             s.clone(),
                             repo.artwork(&p, &s, &dir, &w.cancel).map(|pixels| {
                                 pixels.and_then(|(w, h, bytes)| {

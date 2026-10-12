@@ -4,7 +4,11 @@ import { FontOptions } from "../components/font-options.slint";
 import { AppearanceOptions } from "../components/appearance-options.slint";
 import { ShortcutRow } from "../models.slint";
 import { OnlineOptions } from "../components/online-options.slint";
+import { LyricOptions } from "../components/lyric-options.slint";
+import { LyricStyle } from "../models.slint";
 export component SettingsPage inherits Rectangle {
+    in property <LyricStyle> lyric-style; in property <color> lyrics-accent;
+    in property <color> lyrics-color;
     in property <bool> online-music-enabled; in property <bool> online-lyrics-enabled; in property <[string]> online-directories;
     in property <[ShortcutRow]> bindings; in property <int> seek-step; in property <int> volume-step;
     in property <int> hold-ms; in property <string> hold-speed;
@@ -13,7 +17,7 @@ export component SettingsPage inherits Rectangle {
     in property <int> lyrics-background-style; in property <int> lyrics-background-opacity; in property <int> lyrics-background-blur; in property <string> lyrics-background-name; in property <image> custom-lyrics-background;
     in property <[string]> font-names; in property <[string]> font-lyric-names; in property <[string]> font-subtitle-names; in property <int> font-ui-index; in property <int> font-lyric-index; in property <int> font-subtitle-index;
     in property <bool> font-ass; in property <bool> font-busy; in property <string> font-message; in property <string> lyric-font;
-    private property <int> section;
+    in-out property <int> section;
     callback edit-binding(int,string); callback control(string,string);
     ScrollView {
         width: parent.width; height: parent.height; viewport-width: self.width;
@@ -24,10 +28,12 @@ export component SettingsPage inherits Rectangle {
                 Button { text: "字体"; width: 90px; primary: root.section == 1; clicked => { root.section = 1; } }
                 Button { text: "播放快捷键"; width: 110px; primary: root.section == 2; clicked => { root.section = 2; } }
                 Button { text: "联网服务"; width: 110px; primary: root.section == 3; clicked => { root.section = 3; } }
+                Button { text: "歌词"; width: 70px; primary: root.section == 4; clicked => { root.section = 4; } }
             }
-            if root.section == 0: AppearanceOptions { design: root.design; scheme: root.scheme; system-accent: root.system-accent; custom-accent: root.custom-accent; reduced: root.reduced; os-reduced: root.os-reduced; system-available: root.system-available; library-background-style: root.library-background-style; library-background-opacity: root.library-background-opacity; library-background-blur: root.library-background-blur; library-background-name: root.library-background-name; custom-library-background: root.custom-library-background; lyrics-background-style: root.lyrics-background-style; lyrics-background-opacity: root.lyrics-background-opacity; lyrics-background-blur: root.lyrics-background-blur; lyrics-background-name: root.lyrics-background-name; custom-lyrics-background: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
+            if root.section == 0: AppearanceOptions { lyrics-color: root.lyrics-color; design: root.design; scheme: root.scheme; system-accent: root.system-accent; custom-accent: root.custom-accent; reduced: root.reduced; os-reduced: root.os-reduced; system-available: root.system-available; library-background-style: root.library-background-style; library-background-opacity: root.library-background-opacity; library-background-blur: root.library-background-blur; library-background-name: root.library-background-name; custom-library-background: root.custom-library-background; lyrics-background-style: root.lyrics-background-style; lyrics-background-opacity: root.lyrics-background-opacity; lyrics-background-blur: root.lyrics-background-blur; lyrics-background-name: root.lyrics-background-name; custom-lyrics-background: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
             if root.section == 1: FontOptions { names: root.font-names; lyric-names: root.font-lyric-names; subtitle-names: root.font-subtitle-names; ui-index: root.font-ui-index; lyric-index: root.font-lyric-index; subtitle-index: root.font-subtitle-index; ass: root.font-ass; busy: root.font-busy; message: root.font-message; lyric-font: root.lyric-font; control(action,value) => { root.control(action,value); } }
             if root.section == 3: OnlineOptions { music-enabled: root.online-music-enabled; lyrics-enabled: root.online-lyrics-enabled; directories: root.online-directories; control(action,value) => {root.control(action,value);} }
+            if root.section == 4: LyricOptions { style: root.lyric-style; family: root.lyric-font; accent: root.lyrics-accent; control(action, value) => { root.control(action, value); } }
             if root.section == 2: Rectangle {
 
                 VerticalLayout { spacing: 14px;

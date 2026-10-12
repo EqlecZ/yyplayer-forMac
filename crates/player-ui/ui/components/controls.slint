@@ -37,7 +37,7 @@ export component IconButton inherits Rectangle {
         y: (parent.height - self.height) / 2;
         width: touch.pressed ? 17px : 20px; animate width { duration: Theme.fast; easing: ease-out; }
         icon: root.icon;
-        tint: root.primary ? Theme.accent-ink : (root.active ? Theme.accent-text : Theme.muted);
+        tint: root.primary ? Theme.accent-ink : (root.active ? Theme.accent-text : Theme.control-icon);
     }
     focus := FocusScope {
         key-pressed(event) => {

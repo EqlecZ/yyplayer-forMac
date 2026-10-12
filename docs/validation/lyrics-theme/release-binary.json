@@ -1,0 +1,13 @@
+{
+  "mpv_render_initializations": 0,
+  "volume": 70.0,
+  "exit_code": 0,
+  "sha256": "8adee6c261a1f8155d3ca59b7c4abd78ba9d683356c139f1100a795168f3037f",
+  "bytes": 28974080,
+  "render_error": "",
+  "script_steps": 0,
+  "speed": 1.0,
+  "runtime": "mpv v0.41.0-1087-ge470f8986",
+  "error": "",
+  "ready": true
+}

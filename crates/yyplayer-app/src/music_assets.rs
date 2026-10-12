@@ -17,6 +17,7 @@ pub struct Assets {
     pub album: String,
     pub info: String,
     pub cover: Option<(u32, u32, Vec<u8>)>,
+    pub cover_color: Option<u32>,
     pub lyrics: Lyrics,
     pub warning: String,
 }
@@ -196,7 +197,58 @@ fn read_assets(path: &Path, override_lyrics: Option<&Path>) -> Assets {
         Err(e) if lyric.exists() || override_lyrics.is_some() => result.warning = e,
         _ => {}
     }
+    result.cover_color = result
+        .cover
+        .as_ref()
+        .and_then(|(_, _, pixels)| cover_color(pixels));
     result
+}
+/// Bounded, alpha-aware RGB clustering on the asset worker, once per cover.
+/// Prefer a substantial chromatic cluster over black/white borders; neutral
+/// artwork keeps its actual neutral color. No UI-thread image analysis.
+pub(super) fn cover_color(pixels: &[u8]) -> Option<u32> {
+    #[derive(Clone, Copy, Default)]
+    struct Bin {
+        weight: u64,
+        rgb: [u64; 3],
+        chromatic: bool,
+    }
+    let mut bins = [Bin::default(); 512];
+    let mut neutral = Bin::default();
+    let stride = (pixels.len() / 4).div_ceil(16_384).max(1);
+    for p in pixels.as_chunks::<4>().0.iter().step_by(stride) {
+        if p[3] < 64 {
+            continue;
+        }
+        let high = *p[..3].iter().max().unwrap() as u64;
+        let low = *p[..3].iter().min().unwrap() as u64;
+        let chroma = high - low;
+        let weight = p[3] as u64;
+        neutral.weight += weight;
+        for (sum, &c) in neutral.rgb.iter_mut().zip(p) {
+            *sum += c as u64 * weight;
+        }
+        if high < 24 || low > 235 {
+            continue;
+        }
+        let key = ((p[0] as usize >> 5) << 6) | ((p[1] as usize >> 5) << 3) | (p[2] as usize >> 5);
+        let bin = &mut bins[key];
+        let weight = weight * (32 + chroma);
+        bin.weight += weight;
+        bin.chromatic |= chroma >= 24;
+        for (sum, &c) in bin.rgb.iter_mut().zip(p) {
+            *sum += c as u64 * weight;
+        }
+    }
+    let bin = bins
+        .iter()
+        .filter(|b| b.chromatic)
+        .max_by_key(|b| b.weight)
+        .unwrap_or(&neutral);
+    (bin.weight > 0).then(|| {
+        let c = bin.rgb.map(|c| (c / bin.weight) as u32);
+        (c[0] << 16) | (c[1] << 8) | c[2]
+    })
 }
 pub(super) fn read_thumbnail(path: &Path) -> Option<(u32, u32, Vec<u8>)> {
     if let Ok(file) = lofty::probe::read_from_path(path)
@@ -258,6 +310,22 @@ fn decode_picture_at(bytes: &[u8], size: u32) -> Option<(u32, u32, Vec<u8>)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn cover_palette_ignores_borders_and_transparency_and_handles_neutrals() {
+        let mut pixels = [255, 255, 255, 255].repeat(200);
+        pixels.extend([212, 68, 84, 255].repeat(100));
+        pixels.extend([0, 0, 0, 255].repeat(200));
+        pixels.extend([0, 255, 0, 0].repeat(1000));
+        assert_eq!(cover_color(&pixels), Some(0xd44454));
+        assert_eq!(cover_color(&[90, 90, 90, 255].repeat(10)), Some(0x5a5a5a));
+        assert_eq!(cover_color(&[255, 255, 255, 255]), Some(0xffffff));
+        assert_eq!(cover_color(&[0, 0, 0, 255]), Some(0));
+        assert_eq!(cover_color(&[255, 0, 0, 0]), None);
+        assert_eq!(cover_color(&[]), None);
+        assert_eq!(cover_color(&[12, 20]), None);
+        let large = [40, 100, 210, 255].repeat(1_048_576);
+        assert_eq!(cover_color(&large), Some(0x2864d2));
+    }
     #[test]
     fn thumbnails_preserve_aspect_and_reject_invalid_images() {
         let image = image::DynamicImage::ImageRgba8(image::RgbaImage::from_pixel(

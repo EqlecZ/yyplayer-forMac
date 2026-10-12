@@ -754,7 +754,7 @@ impl AppController {
                         self.online.message = "歌词未获取或当前歌曲已变化".into();
                     }
                 }
-                Event::Artwork(song, result) => {
+                Event::Artwork(song, result, color) => {
                     self.online.art_pending.remove(&song.key());
                     self.online.art_done.insert(song.key());
                     if let Ok(Some((width, height, bytes))) = result {
@@ -779,6 +779,7 @@ impl AppController {
                                 .is_some_and(|s| s.key() == song.key())
                         {
                             self.cover = image;
+                            self.assets.cover_color = color;
                             self.asset_projection_revision += 1;
                         }
                     }

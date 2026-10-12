@@ -6,23 +6,38 @@ export global Theme {
     in property <color> accent: #6875e8;
     in property <color> accent-ink: white;
     in property <color> accent-text: #9fa8ff;
+    in property <float> lyrics-mix;
+    in property <color> lyrics-color: #6875e8;
     out property <bool> fashion: self.design == 1;
     out property <duration> fast: self.reduced-motion ? 0ms : 140ms;
     out property <duration> smooth: self.reduced-motion ? 0ms : 260ms;
     out property <length> radius: self.fashion ? 18px : 8px;
-    out property <color> background: self.dark ? (self.fashion ? #10131b : #111519) : #f2f4fa;
-    out property <color> sidebar: self.dark ? (self.fashion ? #191d28 : #151a1e) : #ffffff;
-    out property <color> surface: self.dark ? (self.fashion ? #222735 : #1b2227) : #ffffff;
-    out property <color> raised: self.dark ? (self.fashion ? #303749 : #232c31) : #e9edf6;
-    out property <color> border: self.dark ? (self.fashion ? #3c455b : #2b3439) : #dce1ed;
+    out property <color> base-background: self.dark ? (self.fashion ? #10131b : #111519) : #f2f4fa;
+    out property <color> lyrics-base: (self.dark ? #11151b : #f4f4f1).mix(self.lyrics-color, self.dark ? 0.83 : 0.88);
+    out property <color> background: self.base-background.mix(self.lyrics-base, 1 - self.lyrics-mix);
+    out property <color> sidebar: (self.dark ? (self.fashion ? #191d28 : #151a1e) : #ffffff).mix(self.lyrics-base.mix(self.lyrics-color, 0.93), 1 - self.lyrics-mix);
+    out property <color> surface: (self.dark ? (self.fashion ? #222735 : #1b2227) : #ffffff).mix((self.dark ? #222735 : #ffffff).mix(self.lyrics-color, 0.86), 1 - self.lyrics-mix);
+    out property <color> raised: (self.dark ? (self.fashion ? #303749 : #232c31) : #e9edf6).mix((self.dark ? #303749 : #e9edf6).mix(self.lyrics-color, 0.78), 1 - self.lyrics-mix);
+    out property <color> border: (self.dark ? (self.fashion ? #3c455b : #2b3439) : #dce1ed).mix((self.dark ? #3c455b : #dce1ed).mix(self.lyrics-color, 0.7), 1 - self.lyrics-mix);
     out property <color> text: self.dark ? #f0f2f8 : #1d2234;
     out property <color> muted: self.dark ? #acb5cb : #59657c;
     out property <color> faint: self.dark ? #8390aa : #64718a;
+    out property <color> control-icon: self.muted.mix(self.accent-text, 1 - self.lyrics-mix * 0.85);
     out property <color> selected: self.accent.with-alpha(self.dark ? 0.19 : 0.12);
     out property <color> glass: self.fashion ? self.sidebar.with-alpha(self.dark ? 0.85 : 0.88) : self.sidebar;
     out property <color> rim: self.dark ? #ffffff24 : #ffffffd9;
     out property <color> shadow: self.dark ? #00000070 : #33456b22;
     out property <color> glow: self.accent.with-alpha(self.dark ? 0.10 : 0.08);
+}
+
+// Alias inputs accept bindings at the instance, keeping globals reactive.
+export component ThemeBinding inherits Rectangle {
+    in property <color> accent <=> Theme.accent;
+    in property <color> ink <=> Theme.accent-ink;
+    in property <color> text-accent <=> Theme.accent-text;
+    in property <color> album <=> Theme.lyrics-color;
+    in property <float> mix <=> Theme.lyrics-mix;
+    width: 0px; height: 0px;
 }
 
 export global Icons {
@@ -47,6 +62,9 @@ export global Icons {
     out property <image> heart: @image-url("assets/icons/heart.svg");
     out property <image> volume: @image-url("assets/icons/volume.svg");
     out property <image> arrow: @image-url("assets/icons/arrow.svg");
+    out property <image> chevron-down: @image-url("assets/icons/chevron-down.svg");
+    out property <image> chevron-up: @image-url("assets/icons/chevron-up.svg");
+    out property <image> checkmark: @image-url("assets/icons/checkmark.svg");
     out property <image> shuffle: @image-url("assets/icons/shuffle.svg");
     out property <image> repeat: @image-url("assets/icons/repeat.svg");
     out property <image> grid: @image-url("assets/icons/grid.svg");

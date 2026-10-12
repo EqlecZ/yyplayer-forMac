@@ -1,67 +1,69 @@
-import { Button, ScrollView } from "std-widgets.slint";
-import { Theme, BackgroundArt } from "../theme.slint";
+import { ScrollView } from "std-widgets.slint";
+import { ThemeButton as Button } from "../components/theme-widgets.slint";
+import { Theme } from "../theme.slint";
 import { MusicArt } from "../components/music-art.slint";
-import { LyricRow } from "../models.slint";
+import { LyricLine } from "../components/lyric-line.slint";
+import { LyricRow, LyricStyle } from "../models.slint";
+
 export component NowPlaying inherits Rectangle {
     in property <image> artwork; in property <string> title; in property <string> artist; in property <string> album;
-    in property <bool> playing; in property <[LyricRow]> lyrics; in property <int> active; in property <string> plain;
-    in property <bool> can-go-back;
+    in property <bool> playing; in property <[LyricRow]> lyrics; in property <[LyricRow]> plain-lines; in property <int> active;
+    in property <bool> can-go-back; in property <bool> interactive: true;
     in property <string> output-status; in property <string> lyric-font;
-    in property <int> background-style; in property <int> background-opacity; in property <image> custom-background;
-    private property <float> breathe: 0;
-    private property <length> entrance: 14px;
-    init => { root.entrance = 0px; }
-    animate entrance { duration: Theme.smooth; easing: ease-out; }
+    in property <LyricStyle> style;
+    in property <color> accent; in property <color> accent-text;
+    in property <bool> hide-artwork;
+    in property <bool> options-open;
+    callback options-toggled(bool);
+    out property <bool> has-lyrics: root.lyrics.length > 0 || root.plain-lines.length > 0;
+    out property <length> column-width: (root.width - 108px - (root.has-lyrics ? 56px : 0px)) / (root.has-lyrics ? 2 : 1);
+    out property <length> cover-size: min(350px, root.column-width, max(150px, root.height - 250px));
+    out property <length> cover-x: 54px + (root.column-width - root.cover-size) / 2;
+    out property <length> cover-y: 76px + max(0px, (root.height - 110px - root.cover-size - 140px) / 2);
+    private property <length> active-y;
+    private property <length> active-height;
     callback control(string,string);
-    background: @linear-gradient(120deg, Theme.background, Theme.sidebar, Theme.background);
-    if root.background-style >= 1 && root.background-style <= 4: Image {
-        width: parent.width; height: parent.height; image-fit: cover;
-        source: root.background-style == 1 ? BackgroundArt.lyrics-halo : (root.background-style == 2 ? BackgroundArt.lyrics-staff : (root.background-style == 3 ? BackgroundArt.lyrics-veil : BackgroundArt.lyrics-stars));
-        colorize: Theme.accent; opacity: Theme.dark ? 0.34 : 0.21;
+    callback geometry(float, float, float);
+    background: transparent;
+    HorizontalLayout { x: 26px; y: 20px; width: parent.width - 52px; height: 34px; spacing: 10px;
+        Text { text: "正在聆听"; color: Theme.faint; vertical-alignment: center; font-size: 11px; horizontal-stretch: 1; }
+        Button { text: "歌词样式"; enabled: root.interactive; clicked => { root.options-toggled(!root.options-open); } }
+        Button { text: "播放选项"; enabled: root.interactive; clicked => { root.options-toggled(false); root.control("panel", ""); } }
     }
-    if root.background-style == 5: Image { width: parent.width; height: parent.height; image-fit: cover; source: root.custom-background; opacity: root.background-opacity / 100; }
-    Timer { interval: 3s; running: root.playing && !Theme.reduced-motion; triggered => { root.breathe = root.breathe == 0 ? 1 : 0; } }
-    Rectangle { x: parent.width * 0.1; y: parent.height * 0.16; width: parent.width * 0.65; height: self.width; border-radius: self.width / 2; background: Theme.accent; opacity: 0.025 + root.breathe * 0.025; animate opacity { duration: Theme.reduced-motion ? 0ms : 3s; easing: ease-in-out; } }
-    HorizontalLayout { x: 26px; y: 20px; width: parent.width - 52px; height: 34px;
-        Rectangle { horizontal-stretch: 1; }
-        Button { text: "音频信息与输出 / EQ"; clicked => { root.control("panel", ""); } }
+    MusicArt { x: root.cover-x; y: root.cover-y; width: root.cover-size; height: self.width;
+        visible: !root.hide-artwork; artwork: root.artwork; playing: root.playing; animated: true;
+        accessible-role: button; accessible-label: "返回上一页";
+        focus := FocusScope { key-pressed(event) => { if root.can-go-back && root.interactive && (event.text == " " || event.text == "\n") { root.control("page-back", ""); return accept; } return reject; } }
+        TouchArea { enabled: root.can-go-back && root.interactive; mouse-cursor: pointer; clicked => { focus.focus(); root.control("page-back", ""); } }
     }
-    HorizontalLayout { x: 54px; y: 76px + root.entrance; width: parent.width - 108px; height: parent.height - 110px; spacing: 56px;
-        VerticalLayout { horizontal-stretch: 1; spacing: 16px; alignment: center;
-            Rectangle { height: min(350px, self.width); horizontal-stretch: 1;
-                MusicArt { x: (parent.width - self.width) / 2; width: min(350px, parent.width); height: self.width; artwork: root.artwork; playing: root.playing; animated: true;
-                    accessible-role: button; accessible-label: "返回上一页";
-                    focus := FocusScope { key-pressed(event) => {if root.can-go-back && (event.text==" " || event.text=="\n") {root.control("page-back","");return accept;} return reject;} }
-                    TouchArea { enabled: root.can-go-back; mouse-cursor: pointer; clicked => {focus.focus();root.control("page-back","");} }
+    VerticalLayout { x: 54px; y: root.cover-y + root.cover-size + 20px; width: root.column-width; height: 120px; spacing: 6px; alignment: start;
+        Text { text: root.title; color: Theme.text; font-size: 25px; font-weight: 600; horizontal-alignment: center; overflow: elide; height: 34px; }
+        Text { text: root.artist == "" ? "本地音乐" : root.artist; color: Theme.muted; font-size: 14px; height: 24px; horizontal-alignment: center; overflow: elide; }
+        if root.album != "": Text { text: root.album; color: Theme.faint; font-size: 12px; height: 20px; horizontal-alignment: center; overflow: elide; }
+        Text { text: root.output-status; color: Theme.faint; font-size: 11px; height: 18px; horizontal-alignment: center; overflow: elide; }
+    }
+    if root.has-lyrics: Rectangle {
+        x: 54px + root.column-width + 56px; y: 76px; width: root.column-width; height: parent.height - 110px;
+        clip: true;
+        lyrics-view := ScrollView {
+            width: parent.width; height: parent.height; viewport-width: self.width;
+            function follow() {
+                if root.active >= 0 && root.lyrics.length > 0 {
+                    self.viewport-y = -min(max(0px, root.active-y + root.active-height / 2 - self.height / 2), max(0px, self.viewport-height - self.height));
                 }
+                root.geometry((root.active-y + root.active-height / 2 + self.viewport-y) / 1px, self.height / 1px, self.viewport-y / 1px);
             }
-            Text { text: root.title; color: Theme.text; font-size: 25px; font-weight: 600; horizontal-alignment: center; overflow: elide; height: 40px; }
-            Text { text: root.artist == "" ? "本地音乐" : root.artist; color: Theme.muted; font-size: 14px; height: 24px; horizontal-alignment: center; overflow: elide; }
-            if root.album != "": Text { text: root.album; color: Theme.faint; font-size: 12px; height: 20px; horizontal-alignment: center; overflow: elide; }
-            Text { text: root.output-status; color: Theme.faint; font-size: 11px; height: 24px; horizontal-alignment: center; overflow: elide; }
-        }
-        if root.lyrics.length > 0 || root.plain != "": VerticalLayout {
-            horizontal-stretch: 1; spacing: 12px;
-            Text { height: 28px; text: "LYRICS"; color: Theme.faint; font-size: 10px; vertical-alignment: center; }
-            lyrics-view := ScrollView { vertical-stretch: 1; viewport-width: self.width;
-                in property <int> line: root.active;
-                in property <bool> following: true;
-                callback follow-line();
-                follow-line => { if self.following && root.lyrics.length > 0 { self.viewport-y = -min(max(0px, self.line * 56px), max(0px, self.viewport-height - self.height)); } }
-                changed line => { self.follow-line(); }
-                changed following => { self.follow-line(); }
-                changed height => { self.follow-line(); }
-                changed viewport-height => { self.follow-line(); }
-                animate viewport-y { duration: Theme.smooth; easing: ease-in-out; }
-                VerticalLayout { spacing: 0px; padding-top: root.lyrics.length > 0 ? max(0px, lyrics-view.height / 2 - 28px) : 0px; padding-bottom: self.padding-top;
-                    if root.lyrics.length == 0: Text { text: root.plain; font-family: root.lyric-font; color: Theme.text; font-size: 18px; wrap: word-wrap; }
-                    for line[index] in root.lyrics: Rectangle {
-                        height: 56px;
-                        Text { text: line.text; font-family: root.lyric-font; width: parent.width; height: parent.height; color: index == root.active ? Theme.accent-text : (touch.has-hover ? Theme.text : Theme.muted); font-size: index == root.active ? 21px : 17px; font-weight: index == root.active ? 600 : 400; vertical-alignment: center; wrap: word-wrap;
-                            animate color, font-size { duration: Theme.smooth; easing: ease-in-out; }
-                        }
-                        touch := TouchArea { mouse-cursor: pointer; clicked => { root.control("lyrics-seek", "" + line.milliseconds); } }
-                    }
+            changed height => { self.follow(); }
+            changed viewport-height => { self.follow(); }
+            changed viewport-y => { root.geometry((root.active-y + root.active-height / 2 + self.viewport-y) / 1px, self.height / 1px, self.viewport-y / 1px); }
+            animate viewport-y { duration: Theme.reduced-motion ? 0ms : 360ms; easing: ease-in-out; }
+            VerticalLayout {
+                spacing: 0px; padding-top: root.lyrics.length > 0 ? lyrics-view.height / 2 : 0px; padding-bottom: self.padding-top;
+                for line[index] in (root.lyrics.length > 0 ? root.lyrics : root.plain-lines): LyricLine {
+                    line: line; style: root.style; family: root.lyric-font; accent: root.accent-text;
+                    active: root.lyrics.length > 0 && index == root.active; seekable: root.interactive && root.lyrics.length > 0;
+                    located(top, height) => { root.active-y = top; root.active-height = height; lyrics-view.follow(); }
+                    clicked => { root.control("lyrics-seek", "" + line.milliseconds); }
                 }
             }
         }

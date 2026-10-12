@@ -9,7 +9,12 @@ export struct TrackRow {
 }
 export struct ShortcutRow { action: string, binding: string }
 export struct EqBandRow { frequency: string, gain: float, q: string, kind: int }
-export struct LyricRow { text: string, milliseconds: int }
+export struct LyricRow { text: string, primary: string, secondary: string, milliseconds: int }
+export struct LyricStyle {
+    album-color: bool, bilingual: bool, line-gap: int,
+    inactive-size: int, inactive-opacity: int, inactive-weight: int,
+    active-size: int, active-weight: int, secondary-weight: int, bilingual-gap: int,
+}
 export struct AudioForm {
     mode: int, preserve-rate: bool, offset-ms: int, scope: int,
     name: string, enabled: bool, preamp: string, auto-headroom: bool,

@@ -1,0 +1,90 @@
+[
+  {
+    "opacity": 1.0,
+    "page": 1,
+    "panel": false,
+    "stage": 0,
+    "width": 1240.0,
+    "window_width": 1240.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 5,
+    "panel": false,
+    "stage": 1,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 3,
+    "panel": false,
+    "stage": 2,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 0,
+    "panel": false,
+    "stage": 3,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 0,
+    "panel": false,
+    "stage": 4,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 0,
+    "panel": true,
+    "stage": 5,
+    "width": 656.0,
+    "window_width": 1240.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 0,
+    "panel": true,
+    "stage": 6,
+    "width": 416.0,
+    "window_width": 1000.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 0,
+    "panel": true,
+    "stage": 7,
+    "width": 876.0,
+    "window_width": 1460.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 3,
+    "panel": false,
+    "stage": 8,
+    "width": 1258.0,
+    "window_width": 1460.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 0,
+    "panel": false,
+    "stage": 9,
+    "width": 1280.0,
+    "window_width": 1460.0
+  },
+  {
+    "opacity": 1.0,
+    "page": 6,
+    "panel": false,
+    "stage": 10,
+    "width": 1280.0,
+    "window_width": 1460.0
+  }
+]

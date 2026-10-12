@@ -1,0 +1,1 @@
+PASS: cover expand, collapse, lyric click; five music layout captures

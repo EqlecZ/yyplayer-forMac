@@ -132,8 +132,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 1 if m.page==6 && w.get_content_opacity()>0.99=>{shot(&w,"history")?;drop(c);click(&w,w.get_content_left()+250.,88.);key(&w,"原创 HTTPS 验收");key(&w,"\n");},
                 2 if m.online.rows.len()==2&&!m.online.busy&&m.online.rows.iter().all(|s|s.artwork.size().width>0)&&stable_since.elapsed()>Duration::from_millis(500)=>{shot(&w,"results")?;drop(c);w.invoke_control("online-play".into(),"1".into());},
                 3 if snapshot.phase==PlaybackPhase::Playing && snapshot.position.is_some_and(|p|p.as_secs_f64()>1.) && !m.audio.lyrics.is_empty() && m.audio.cover.size().width>0=>{
+                    if m.audio.cover_color.is_none() { return Err("Online artwork has no worker-extracted palette".into()); }
                     if !matches!(snapshot.source,Some(player_core::MediaSource::Url(_))){return Err("First playback must be a real stream".into());}
-                    records.push(serde_json::json!({"stage":"stream","position":snapshot.position.map(|p|p.as_secs_f64()),"video":snapshot.video,"title":m.selected_title}));
+                    records.push(serde_json::json!({"stage":"stream","position":snapshot.position.map(|p|p.as_secs_f64()),"video":snapshot.video,"title":m.selected_title,"cover_color":m.audio.cover_color.map(|c|format!("#{c:06x}"))}));
                     c.dispatch(UiAction::Navigate(4));
                 },
                 4 if m.page==4&&w.get_content_opacity()>0.99&&since.elapsed()>Duration::from_millis(650)=>{shot(&w,"lyrics")?;control(&mut c,"seek-percent","50");c.dispatch(UiAction::RequestPlayback);},

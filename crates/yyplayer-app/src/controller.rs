@@ -27,6 +27,8 @@ mod font_service;
 mod library_controller;
 #[path = "library_service.rs"]
 mod library_service;
+#[path = "lyric_controller.rs"]
+mod lyric_controller;
 #[path = "music_assets.rs"]
 mod music_assets;
 #[path = "navigation.rs"]
@@ -636,6 +638,9 @@ impl AppController {
             return;
         }
         if self.font_control(action, value) {
+            return;
+        }
+        if self.lyric_control(action, value) {
             return;
         }
         if self.video_control(action, value) {

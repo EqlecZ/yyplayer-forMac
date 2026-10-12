@@ -1,7 +1,9 @@
 import { ComboBox, SpinBox, Button } from "std-widgets.slint";
 import { Theme, BackgroundArt } from "../theme.slint";
+import { MusicAmbient } from "music-ambient.slint";
 export component BackgroundChoice inherits Rectangle {
     in property <bool> lyrics-page;
+    in property <color> accent: Theme.accent;
     in property <int> style; in property <int> opacity-value; in property <int> blur-value;
     in property <string> file-name; in property <image> custom-image;
     callback control(string,string);
@@ -10,12 +12,13 @@ export component BackgroundChoice inherits Rectangle {
         Text { text: root.lyrics-page ? "歌词页背景" : "音乐库 / 视频库背景"; color: Theme.text; font-size: 16px; font-weight: 600; height: 25px; }
         HorizontalLayout { height: 92px; spacing: 14px;
             Rectangle { width: 150px; height: 92px; border-radius: 8px; background: Theme.background; border-width: 1px; border-color: Theme.border;
-                if root.style >= 1 && root.style <= 4: Image { width: parent.width; height: parent.height; image-fit: cover; source: root.lyrics-page ? (root.style == 1 ? BackgroundArt.lyrics-halo : (root.style == 2 ? BackgroundArt.lyrics-staff : (root.style == 3 ? BackgroundArt.lyrics-veil : BackgroundArt.lyrics-stars))) : (root.style == 1 ? BackgroundArt.library-orbits : (root.style == 2 ? BackgroundArt.library-ribbons : (root.style == 3 ? BackgroundArt.library-horizon : BackgroundArt.library-grid))); colorize: Theme.accent; opacity: 0.65; }
-                if root.style == 5: Image { width: parent.width; height: parent.height; image-fit: cover; source: root.custom-image; opacity: root.opacity-value / 100; }
+                if root.lyrics-page: MusicAmbient { x: 0px; y: 0px; width: parent.width; height: parent.height; accent: root.accent; style: root.style; image-opacity: root.opacity-value; custom-image: root.custom-image; }
+                if !root.lyrics-page && root.style >= 1 && root.style <= 4: Image { width: parent.width; height: parent.height; image-fit: cover; source: root.style == 1 ? BackgroundArt.library-orbits : (root.style == 2 ? BackgroundArt.library-ribbons : (root.style == 3 ? BackgroundArt.library-horizon : BackgroundArt.library-grid)); colorize: root.accent; opacity: 0.65; }
+                if !root.lyrics-page && root.style == 5: Image { width: parent.width; height: parent.height; image-fit: cover; source: root.custom-image; opacity: root.opacity-value / 100; }
             }
             VerticalLayout { spacing: 6px; horizontal-stretch: 1;
-                ComboBox { height: 34px; model: root.lyrics-page ? ["原有背景", "柔光圆环", "音符丝带", "轻纱曲线", "星轨连线", "自定义图片"] : ["原有背景", "轨道唱片", "流动丝带", "落日地平线", "几何网格", "自定义图片"]; current-index: root.style; selected(value) => { root.control(root.lyrics-page ? "background-lyrics-style" : "background-library-style", "" + self.current-index); } }
-                Text { text: root.style == 5 ? (root.file-name == "" ? "尚未选择图片" : root.file-name) : "随系统或手动主题色变化"; color: Theme.muted; font-size: 11px; height: 28px; overflow: elide; vertical-alignment: center; }
+                ComboBox { height: 34px; model: root.lyrics-page ? ["专辑柔光", "柔光圆环", "音符丝带", "轻纱曲线", "星轨连线", "自定义图片"] : ["原有背景", "轨道唱片", "流动丝带", "落日地平线", "几何网格", "自定义图片"]; current-index: root.style; selected(value) => { root.control(root.lyrics-page ? "background-lyrics-style" : "background-library-style", "" + self.current-index); } }
+                Text { text: root.style == 5 ? (root.file-name == "" ? "尚未选择图片" : root.file-name) : (root.lyrics-page ? "随歌词页的封面 / 应用主题色变化" : "随系统或手动主题色变化"); color: Theme.muted; font-size: 11px; height: 28px; overflow: elide; vertical-alignment: center; }
             }
         }
         if root.style == 5: HorizontalLayout { height: 34px; spacing: 10px;

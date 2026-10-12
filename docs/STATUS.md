@@ -1,5 +1,15 @@
 # YYPlayer 进度与证据
 
+## 2026-10-12：两端 master 合并与 master / dev 同步
+
+状态：合并与 Windows 本地验证完成；按本条策略同步并在交付时核验四个分支一致。用户授权合并本地 / 远端 master，并更新两端 dev；详见 [同步记录](validation/master-dev-sync.md)。
+
+- 分歧：本地 master=`ee3c701`（打包 / 0.3.0），远端 master=`7a0bac8`（PR #5 / 歌词 UI），两端 dev=`f9a0219`，均已包含于远端 master。先保存四个 tip 到 `refs/backup/codex-sync-20261012-187b98fa/`，再在 master 进行普通 merge，保留两端历史。
+- 冲突 / 文件：仅 README / CHANGELOG / STATUS；保留两套更新 / 验收记录，README 保留 0.3.0 与完整歌词说明。应用代码自动合并且与远端功能源码一致，本地 Windows 打包 / 版本 / gitignore 完整保留；PUBLISHING 更新本轮同步授权，新增本条与报告。
+- 同步方式：合并提交完成后将本地 dev 快进到 master，正常 atomic push 两个分支；不重写历史，最终通过 fetch / ls-remote / 祖先断言核对四个分支相同。另一个既有 detached worktree 不参与同步。
+- 检查：fmt check、严格 locked/offline workspace/all-targets clippy（40.80秒）、all-targets tests 通过；47项独立单测（core14/mpv9/platform1/UI1/app22），例子复用测试亦通过，既有 HTTPS 默认 ignored。x64 Release 通过（4分10秒），EXE 版本0.3.0；独立配置4秒正常退出 exit0、ready=true、Idle、error/render_error空、render初始化0。7项打包回归、文档链接、PowerShell AST、source保留与diff检查通过；详细日志 / hash见报告。
+- 限制 / 下一步：本轮未重复歌词 GPU / 联网 / 物理输入专项，原远端验收记录保留；Linux / macOS、USB / 位准确 / HDR 和安装发行资格不扩展。推送后核对 Windows Actions 与新包，其他旧分支及既有工作树保持不动。
+
 ## 2026-10-12：S08 子步骤 · Windows 自动编译打包与 0.3.0
 
 状态：Done（本轮自动编译 / 打包 / 版本更新及文档整理范围）。实现与文档按用户要求一并在 master 本地提交，未推送；验收包在提交前生成，保留基准提交号与 working tree modified 标记。详见 [验收记录](validation/windows-packaging.md)。
@@ -12,6 +22,31 @@
 - 修复 / 限制：实测纠正 PowerShell 5.1 将原生 stderr 进度当终止错误的问题，也纠正测试环境恢复留下空 CARGO_TARGET_DIR 的问题，最终复验通过。没有新增已知打包缺陷；远端 Actions、干净系统安装 / 升级 / 卸载、Linux 本轮运行与原 USB / 位准确 / HDR / 二进制许可闭包仍未验收。未改播放 / UI / 音频输出策略，未重跑硬件专项。
 - 文档 / Git：核对 master 中 `5390a3d` / `e99d67c` 的历史，纠正 README / CONTRIBUTING / AGENTS / DEVELOPMENT_PLAN / PUBLISHING / Linux 指南中的待合并描述，保留旧 STATUS / ADR 当时结论。更新 .gitignore 排除二进制、发行包与临时下载，保留锁定清单、图标、API 示例与验收文档；提交前通过26项生成路径 / 17项源码路径 ignore 断言、Markdown 链接、PowerShell AST 与暂存 diff 检查。本次仅新增文档 / 忽略规则和 LF 规范化，沿用上轮已通过的代码检查，不重复硬件专项。
 - 下一步：提交后运行 Windows x64 packages，核对 CI 产物并在干净 Windows x64 验证安装 / 升级 / 卸载；继续补齐 runtime notices / 对应源码与依赖闭包，不把本轮构建通过标记为正式发行完成。
+
+## 2026-10-12：歌词页完整主题与 Android 柔光背景
+
+状态：Done（Windows 实现、Release 真实转场 / GPU 控件取色与回归）；Linux / macOS 和物理输入待验。沿用 dev 工作区，未提交 / 推送；本地 master / dev HEAD 均为 e99d67c，新增未提交功能不在 master。详见[主题验收](validation/lyrics-theme.md)、[ADR 0010](adr/0010-full-lyrics-theme.md)与[指南](LYRICS.md)。
+
+- 目标与结果：封面主题色覆盖暂停 / 播放、进度 / 音量、图标、倍速下拉、歌词样式、播放选项 / EQ。只读参考 Android MusicAmbientBackground，整窗采用带色底色、两侧径向柔光与底部渐变，旧矢量背景和自定义图叠在同一基底；浅色歌词区去掉平色横条。浏览往返以420ms混合主题，换歌950ms更新，减少动态效果沿用即时切换。
+- 改动文件：UI theme / app、now-playing、music-ambient / theme-widgets 与三枚勾选 / 箭头 SVG、controls / player-bar / audio-options / video-options / background-choice；shell 的封面按钮前景投影；lyrics-ui 43阶段例子与 Test-Lyrics 的 Release 入口；README / LYRICS / ADR / CHANGELOG / 本条及报告和自有证据。没有新增依赖、Engine / presenter、runtime 或音频默认策略改动。
+- 交互修正：主题控件把控制器值作为输入，以回调提交操作，避免选择后破坏输入绑定；实际1.5x、恢复1x、非预设1.37x均与标签一致。歌词样式表单左上定位、显式首选高度与滚动高度，1000×640可滚到底部重置，再滚回顶部继续编辑；输入草稿保留，勾选 / 增减不依赖符号字体。
+- 检查：最终 `cargo fmt --all -- --check` exit0；严格 `cargo clippy --locked --offline --workspace --all-targets --config profile.dev.debug=0 --config profile.dev.incremental=false -- -D warnings` exit0（5.40秒）；相同profile的完整 `cargo test --locked --offline --workspace` exit0（13.15秒），core14 / mpv9 / platform1 / UI1 / app22，HTTPS默认ignored。Test-Lyrics Debug与Release均exit0；Test-UiCustomization22阶段、Test-NavigationHistory24步、navigation-ui11点、ui-feedback17点、audio-ui五图与点击、Test-VideoLibrary真实视频10循环均exit0。Test-Online仅本轮FrontendOnly / SkipHttps / SkipNavigation exit0，后台完整HTTPS / 媒体资格沿用上一轮，导航另验。脚本语法、JSON / 素材hash、diff / 文档链接通过。
+- 真机：Windows 11 x64、Winit / FemtoVG / 锁定Slint1.17.1与固定hash libmpv，自有素材 / 独立配置。Release 43阶段、13组控件GPU像素断言，珊瑚 / 蓝 / 绿主题明确覆盖整窗；进入 / 返回各19 / 18种中间色、换歌42种，封面进度峰值1.00533。两尺寸 / 明暗 / 无封面 / 关闭取色 / 双语与参数保存 / 首尾长句居中 / 反向点击 / 减少动画通过。不是帧率、位准确或HDR测量。
+- Release：最终 `cargo build --locked --release --offline -p yyplayer-app --bin yyplayer` exit0（7分25秒），普通EXE不启用online-qa。新独立配置 / 清除本进程覆盖变量后4秒正常退出exit0；ready=true，error / render_error为空，libmpv视频renderer初始化0、script_steps=0、音量70% / 倍速1x；文件28,974,080字节，hash见报告。没有写用户APPDATA / 系统偏好 / Android工程。
+- 未验与下一步：Debug返回浏览初次布局可能超过动画采样窗口，完整动画证据使用Release；本轮自有Release场景未发现新增缺陷。物理键鼠 / 滚轮、屏幕阅读器、多屏DPI、Linux / macOS、新安装包尚未新增证据。下一步在Linux用同一素材复验完整主题与转场，再补物理输入 / 可访问性；既有USB / 位准确 / HDR / 发行限制保留。
+
+## 2026-10-11：歌词页主题、转场与双语排版
+
+状态：Done（Windows 实现与自有素材 / 真实联网资源验收）；Linux / macOS 新布局和物理输入待验。改动保留在 dev，未提交 / 推送。详见[使用指南](LYRICS.md)、[ADR 0009](adr/0009-lyrics-theme-and-layout.md)和[验收记录](validation/lyrics-page.md)。
+
+- Git：初始工作区干净，dev-api=e99d67c 是 master=5390a3d 与旧 dev=ec55789 的后继；已按用户授权先快进合入本地 master，再签出 dev 并快进到同一 e99d67c。没有改写历史或推送；本轮未提交功能不在 master 中。
+- 实现：内嵌 / 本地 / 联网真实封面在现有后台资源服务中限量采样，生成歌词页主题色与柔光渐变，缺失回退应用色。浏览 / 歌词页 420ms 淡入淡出，真实左下 48px 封面 480ms 移动 / 缩放并微回弹；快速反向点击和减少动态效果即时切换均覆盖。
+- 排版与配置：页内「歌词样式」与「设置 → 歌词」共用八项独立参数、两个开关及默认恢复；revision 驱动实时投影和既有自动保存。带空格的 ` / ` 拆为上下双语，副语言字重 / 间距独立，点击保留原时间戳；按实际换行高度居中跟随，纯文本共用排版。字体族仍在独立字体设置中。
+- 改动文件：core lyrics/settings；app music_assets、online/mod、online_controller、audio_controller、lyric_controller、controller、bootstrap；UI view_model/shell、app、now-playing/settings、lyric-line/lyric-options、music-art/player-bar、背景选择；lyrics-ui/online-search 例子、Test-Lyrics/prepare-lyrics-fixtures、指南 / ADR / CHANGELOG / 本条和报告。没有依赖、Engine、presenter、固定 runtime 或音频默认策略改动。
+- 检查：fmt check exit0；严格 clippy workspace/all-targets exit0（32.96秒）；最终完整 workspace 单测 exit0（core14/mpv9/platform1/UI1/app22，HTTPS 默认 ignored 后完整 Test-Online 显式通过40.82秒）；Test-Lyrics 25阶段、Test-UiCustomization 22阶段、Test-NavigationHistory 24步、navigation-ui 11点、ui-feedback 17点、audio-ui 五图 / 实际点击、完整 Test-Online、Test-VideoLibrary 视频10循环均 exit0。普通 Release 最终构建 exit0，4秒独立配置启动 / 正常退出 exit0、ready=true、error/render_error空、视频 renderer 初始化0；EXE 与 SHA 见报告。PowerShell / Python 语法、diff / 文档链接检查通过。
+- 实机：Windows x64 / 锁定 Slint 1.17.1 / Winit+FemtoVG / 固定 hash libmpv；自有珊瑚、蓝、绿封面及长句中 / 英 / 日歌词，1000×640 与1240×900、175%缩放截图审查；实际页内参数点击与保存读回一致。首尾、大字号 / 大间距、最小窗口播放选项、无封面 / 纯文本 / 同帧减少动画通过。自有 HTTPS 封面后台取色及串流 / 下载后本地播放通过；不读用户歌曲、不写用户 APPDATA / 系统偏好。
+- 已知限制：没有逐字卡拉 OK / 自动语言识别 / 纯文本时间同步；字体可用字重由字面 / 渲染器决定，极长块或大字号可超出视口。Linux / macOS 新布局、物理键鼠 / 触控板、多 DPI 与字体安装变化待验；USB / 位准确 / HDR / 二进制发行资格不扩展。
+- 下一具体步骤：Linux 运行同一自有素材复验双语换行、背景与转场，再补物理滚动 / 输入和多 DPI / 字体组合。
 
 ## 2026-10-11：A01.5 · 页面历史栈与返回
 
