@@ -47,6 +47,13 @@ export component OnlineSearchPage inherits Rectangle {
                 }
             }
         }
+        if root.tracks.length > 0 && !root.history-open && !root.compact: Rectangle {
+            height: 28px;
+            private property <length> columns: max(1px, self.width - 140px);
+            Text { x: 78px; width: parent.columns * 0.44 - 12px; height: parent.height; text: "歌曲"; color: Theme.faint; vertical-alignment: center; }
+            Text { x: 78px + parent.columns * 0.44; width: parent.columns * 0.25 - 12px; height: parent.height; text: "歌手"; color: Theme.faint; vertical-alignment: center; }
+            Text { x: 78px + parent.columns * 0.69; width: parent.columns * 0.31; height: parent.height; text: "专辑"; color: Theme.faint; vertical-alignment: center; }
+        }
         if root.tracks.length > 0 && !root.history-open: list := ListView {
             vertical-stretch: 1; viewport-width: self.width;
             callback report-visible(); report-visible => {
@@ -56,12 +63,15 @@ export component OnlineSearchPage inherits Rectangle {
             init => {self.report-visible();} changed viewport-y => {self.report-visible();} changed height => {self.report-visible();} changed viewport-height => {self.report-visible();} changed visible-height => {self.report-visible();}
             scrolled => { self.report-visible(); }
             for track[index] in root.tracks: Rectangle { height: 76px; background: index == root.selected ? Theme.accent.with-alpha(0.12) : Theme.surface.with-alpha(0.35); border-radius: 10px;
+                private property <bool> columns-visible: !root.compact;
+                private property <length> columns: max(1px, self.width - 140px);
                 accessible-role: button; accessible-label: track.title + "，" + track.artist;
                 focus := FocusScope { key-pressed(event) => {if event.text == " " || event.text == "\n" {root.control("online-play","" + index);return accept;}return reject;} }
                 TouchArea { width: parent.width - 52px; mouse-cursor: pointer; clicked => {focus.focus(); root.control("online-play", "" + index); } }
                 Cover { x: 10px; y: 10px; width: 56px; height: 56px; artwork: track.artwork; artwork-id: -1; }
-                Text { x: 78px; y: 12px; width: parent.width - 140px; height: 24px; text: track.title; color: Theme.text; font-size: 16px; font-weight: 600; overflow: elide; }
-                Text { x: 78px; y: 42px; width: parent.width - 140px; height: 20px; text: track.artist + " · " + track.collection; color: Theme.muted; font-size: 12px; overflow: elide; }
+                Text { x: 78px; y: parent.columns-visible ? 0px : 12px; width: parent.columns-visible ? parent.columns * 0.44 - 12px : parent.columns; height: parent.columns-visible ? parent.height : 26px; text: track.title; color: Theme.text; font-size: 16px; font-weight: 600; vertical-alignment: center; overflow: elide; }
+                Text { x: parent.columns-visible ? 78px + parent.columns * 0.44 : 78px; y: parent.columns-visible ? 0px : 42px; width: parent.columns-visible ? parent.columns * 0.25 - 12px : parent.columns; height: parent.columns-visible ? parent.height : 22px; text: parent.columns-visible ? track.artist : track.artist + " · " + track.collection; color: Theme.muted; font-size: 14px; vertical-alignment: center; overflow: elide; }
+                if !root.compact: Text { x: 78px + parent.columns * 0.69; width: parent.columns * 0.31; height: parent.height; text: track.collection; color: Theme.muted; font-size: 14px; vertical-alignment: center; overflow: elide; }
                 if !root.lyric-mode: IconButton { x: parent.width - 44px; y: 22px; icon: Icons.more; label: "选择播放音质 / 下载歌曲"; clicked => { root.control("online-menu", "" + index); } }
             }
         }

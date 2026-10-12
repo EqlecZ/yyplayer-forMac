@@ -35,16 +35,16 @@ export component LyricOptions inherits Rectangle {
         CheckBox { height: 28px; text: "双语歌词上下行显示"; checked: root.style.bilingual; toggled(next) => { root.control("lyrics-style-bilingual", next ? "yes" : "no"); } }
         gap := NumberOption { label: "歌词行间距"; value: root.style.line-gap; minimum: 0; maximum: 80; changed y => { root.report-layout(); } edited(v) => { root.control("lyrics-style-line-gap", "" + v); } }
         Rectangle { height: 1px; background: Theme.border; }
-        Text { text: "普通行"; color: Theme.muted; font-size: 12px; height: 20px; }
+        Text { text: "普通行"; color: Theme.muted; font-size: 14px; height: 20px; }
         NumberOption { label: "字号"; value: root.style.inactive-size; minimum: 12; maximum: 48; edited(v) => { root.control("lyrics-style-inactive-size", "" + v); } }
         NumberOption { label: "不透明度"; unit: "%"; value: root.style.inactive-opacity; minimum: 0; maximum: 100; edited(v) => { root.control("lyrics-style-inactive-opacity", "" + v); } }
         NumberOption { label: "字重"; unit: ""; value: root.style.inactive-weight; minimum: 100; maximum: 900; step: 100; edited(v) => { root.control("lyrics-style-inactive-weight", "" + v); } }
         Rectangle { height: 1px; background: Theme.border; }
-        Text { text: "当前行"; color: Theme.muted; font-size: 12px; height: 20px; }
+        Text { text: "当前行"; color: Theme.muted; font-size: 14px; height: 20px; }
         NumberOption { label: "字号"; value: root.style.active-size; minimum: 12; maximum: 64; edited(v) => { root.control("lyrics-style-active-size", "" + v); } }
         NumberOption { label: "字重"; unit: ""; value: root.style.active-weight; minimum: 100; maximum: 900; step: 100; edited(v) => { root.control("lyrics-style-active-weight", "" + v); } }
         Rectangle { height: 1px; background: Theme.border; }
-        Text { text: "副语言"; color: Theme.muted; font-size: 12px; height: 20px; }
+        Text { text: "副语言"; color: Theme.muted; font-size: 14px; height: 20px; }
         NumberOption { label: "字重"; unit: ""; value: root.style.secondary-weight; minimum: 100; maximum: 900; step: 100; edited(v) => { root.control("lyrics-style-secondary-weight", "" + v); } }
         NumberOption { label: "两种语言间距"; value: root.style.bilingual-gap; minimum: 0; maximum: 40; edited(v) => { root.control("lyrics-style-bilingual-gap", "" + v); } }
         if root.preview: Rectangle {
@@ -52,7 +52,7 @@ export component LyricOptions inherits Rectangle {
             height: sample.height + 20px;
             sample := LyricLine { x: 10px; y: 10px; width: parent.width - 20px; line: {text: "Listen to the evening / 听见晚风", primary: "Listen to the evening", secondary: "听见晚风", milliseconds: -1}; style: root.style; family: root.family; accent: root.accent; active: true; }
         }
-        Text { text: "即时生效并自动保存。双语以空格斜线「 / 」分隔，副语言字号随主语言缩放。"; color: Theme.faint; wrap: word-wrap; height: 42px; font-size: 11px; }
+        Text { text: "即时生效并自动保存。双语以空格斜线「 / 」分隔，副语言字号随主语言缩放。"; color: Theme.faint; wrap: word-wrap; height: 42px; font-size: 13px; }
         Button { text: "恢复歌词页默认设置"; height: 34px; clicked => { root.control("lyrics-style-reset", ""); } }
     }
 }

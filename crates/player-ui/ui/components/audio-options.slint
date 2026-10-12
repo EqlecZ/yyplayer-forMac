@@ -12,21 +12,21 @@ export component AudioOptions inherits VerticalLayout {
     Text { text: root.status; color: Theme.accent-text; wrap: word-wrap; min-height: 38px; }
     Button { text: "重新连接 / 重试当前输出"; clicked => { root.control("output-retry", ""); } }
     CheckBox { text: "独占保持源采样率（不兼容则暂停）"; checked: root.form.preserve-rate; toggled(next) => { root.control("preserve-rate", next ? "yes" : "no"); } }
-    Text { text: "不强制升采样，不默认添加音效。独占与 EQ 可以同时使用；调整音量、EQ、倍速会改变样本。"; color: Theme.faint; font-size: 11px; wrap: word-wrap; min-height: 46px; }
+    Text { text: "不强制升采样，不默认添加音效。独占与 EQ 可以同时使用；调整音量、EQ、倍速会改变样本。"; color: Theme.faint; font-size: 13px; wrap: word-wrap; min-height: 46px; }
     Rectangle { height: 1px; background: Theme.border; }
     Text { text: "均衡器"; color: Theme.text; font-size: 16px; font-weight: 600; height: 28px; }
-    Text { text: "生效优先级：单文件 → 设备绑定 → 全局\n当前：" + root.origin + " · 设备：" + root.binding; color: Theme.muted; font-size: 11px; wrap: word-wrap; min-height: 38px; }
+    Text { text: "生效优先级：单文件 → 设备绑定 → 全局\n当前：" + root.origin + " · 设备：" + root.binding; color: Theme.muted; font-size: 13px; wrap: word-wrap; min-height: 38px; }
     Button { text: root.eq-expanded ? "收起 EQ 编辑器" : "展开 EQ 编辑器"; clicked => { root.eq-expanded = !root.eq-expanded; } }
     if root.eq-expanded: VerticalLayout { spacing: 10px;
     ComboBox { model: ["编辑全局 EQ", "编辑当前输出设备 EQ", "编辑当前文件 EQ"]; current-index: root.form.scope; selected(value, choice) => { root.control("eq-scope", "" + choice); } }
-    Text { text: "命名预设（选择后载入草稿）"; color: Theme.muted; font-size: 11px; height: 20px; }
+    Text { text: "命名预设（选择后载入草稿）"; color: Theme.muted; font-size: 13px; height: 20px; }
     ComboBox { model: root.form.presets; current-index: root.form.preset-index; selected(value, choice) => { root.control("eq-preset", "" + choice); } }
     HorizontalLayout { Button { text: "导入预设"; clicked => { root.control("eq-import", ""); } } Button { text: "导出 JSON"; clicked => { root.control("eq-export", ""); } } }
     LineEdit { text: root.form.name; placeholder-text: "预设名称"; edited(value) => { root.control("eq-name", value); } }
     CheckBox { text: "启用均衡器"; checked: root.form.enabled; toggled(next) => { root.control("eq-enabled", next ? "yes" : "no"); } }
     HorizontalLayout { Text { text: "前置增益 dB"; color: Theme.muted; vertical-alignment: center; } LineEdit { text: root.form.preamp; edited(value) => { root.control("eq-preamp", value); } } }
     CheckBox { text: "自动留出正增益余量"; checked: root.form.auto-headroom; toggled(next) => { root.control("eq-headroom", next ? "yes" : "no"); } }
-    Text { text: root.headroom; color: Theme.faint; font-size: 11px; height: 20px; }
+    Text { text: root.headroom; color: Theme.faint; font-size: 13px; height: 20px; }
     for band[index] in root.form.bands: Rectangle {
         height: 110px; background: Theme.surface; border-radius: 8px;
         VerticalLayout { padding: 8px; spacing: 6px;
@@ -48,7 +48,7 @@ export component AudioOptions inherits VerticalLayout {
     Button { text: "删除选中的命名预设 / 解除其设备绑定"; clicked => { root.control("eq-delete", ""); } }
     Button { text: root.form.scope == 1 ? "应用并绑定当前设备" : "保存并应用该范围"; primary: true; clicked => { root.control("eq-apply", ""); } }
     Button { text: "清除该范围覆盖"; clicked => { root.control("eq-clear", ""); } }
-    Text { text: "导入支持 YYPlayer JSON 与 APO 的 PK / LS / HS（带 Q）。不执行 Include 或任意滤镜。更高优先级的规则可能覆盖本次设置。"; color: Theme.faint; font-size: 11px; wrap: word-wrap; min-height: 48px; }
+    Text { text: "导入支持 YYPlayer JSON 与 APO 的 PK / LS / HS（带 Q）。不执行 Include 或任意滤镜。更高优先级的规则可能覆盖本次设置。"; color: Theme.faint; font-size: 13px; wrap: word-wrap; min-height: 48px; }
     Rectangle { height: 1px; background: Theme.border; }
     }
     Button { text: "联网获取歌词"; clicked => { root.control("online-lyrics", ""); } }

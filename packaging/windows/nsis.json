@@ -1,0 +1,9 @@
+{
+  "version": "3.12",
+  "archive_url": "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.12/nsis-3.12.zip?download=1",
+  "archive_sha256": "56581f90db321581c5381193d796fffcf2d24b2f8fed2160a6c6a3baa67f2c4f",
+  "archive_name": "nsis-3.12.zip",
+  "compiler": "nsis-3.12/makensis.exe",
+  "source": "https://sourceforge.net/projects/nsis/files/NSIS%203/3.12/",
+  "license": "https://nsis.sourceforge.io/Docs/AppendixI.html"
+}

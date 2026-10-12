@@ -2,6 +2,14 @@
 
 本文件面向后续人类开发者和代码代理。项目概览与启动方法见 [README.md](README.md)，产品目标、选型依据、模块接口与逐阶段任务以 [开发规划](docs/DEVELOPMENT_PLAN.md) 为准，已交付更新见 [CHANGELOG.md](CHANGELOG.md)。当前为 Windows x64 / Ubuntu 26.04 amd64 共用源码的 libmpv 开发预览：真实播放、GPU 合成、分级解码设置、快捷键、媒体库、EQ 与本地歌词已接入；Windows 使用 WASAPI，Linux 使用 PipeWire / PulseAudio / ALSA。用户已确认 dev-linux 的 Windows Actions 编译打包通过；USB DAC / 位准确、系统集成和广泛平台资格仍未完成。不能把规划描述或示例 UI 当成已实现功能。
 
+## 0. 顶层分支规则（用户明确要求，2026-10-12）
+
+- **唯一的顶层开发分支与开发起点是 `dev`。`master` 只允许合入 `dev` 的已验证改动，不能直接开发、编辑或提交修改。** 本规则覆盖源码、UI、脚本、配置、版本号、文档和 AGENTS.md 本身。
+- 修改前先运行 `git branch --show-current`。当前为 master 时，先检查工作区与分支进度、切换到 dev，再编辑；不能在 master 修改完成后才改分支名称。下级任务 / 独立工作树也必须以 dev 为开发起点，改动先整合到 dev，不能从 master 开始开发来绕过此规则。
+- master 合入有冲突时，先在 dev 合并最新 master 并处理冲突、验证，再让 master 快进合入 dev；不得在 master 手工修代码或解决内容冲突。合入结束后回到 dev 继续工作。
+- 提交、合入 master、推送和发布各自按当轮用户授权执行；本地修改 / 打包不代表自动授权合入 master 或推送。不得使用强制推送或重写历史来同步分支。
+- 后文“源码主分支为 master”指集成 / 发布分支，不能解释为允许在 master 修改代码。历史 STATUS / ADR 的旧分支操作仅为当时记录，不是当前执行规则。
+
 ## 1. 接手时的执行顺序
 
 1. 读 README 的项目概览与启动方法，再读 docs/DEVELOPMENT_PLAN.md 中选型结论、视频呈现、音频策略与当前任务对应章节。
@@ -125,7 +133,7 @@ STATUS 中填写：当前任务 / 子步骤、改动文件、检查命令及结�
 ## 源码发布与共用主分支接续（2026-10-03）
 
 - 用户已确定 GPL-3.0-only；workspace 与五个 crate 继承该字段，根 LICENSE 保留标准原文。第三方记录不能替代 runtime 二进制完整 notices / 对应源码安排。
-- 正式源码主分支为 master；dev-linux 共用代码已在 `5390a3d` 合入，联网搜索与页面返回已在 `e99d67c` 中。dev / dev-linux / dev-api 是历史或功能开发分支，不是 Windows / Linux 编译的必要条件，也不假设本地必须存在这些分支。原 main 提交保留在 master 历史中；当前分支状态按 git 检查，进度以 STATUS 和 docs/PUBLISHING.md 为准。
+- 正式集成 / 发布分支为 master，唯一顶层开发分支为 dev，所有修改遵循第 0 节；dev-linux 共用代码已在 `5390a3d` 合入，联网搜索与页面返回已在 `e99d67c` 中。dev-linux / dev-api 为历史功能分支；分支名不决定编译平台。原 main 提交保留在 master 历史中；当前分支状态按 git 检查，进度以 STATUS 和 docs/PUBLISHING.md 为准。
 - 用户在自己的完整仓库根目录操作，Windows 工作区为 E:\SourceFiles\rust\yyplayer，Linux 工作区为 /home/yydaniel/sourcefiles/yyplayer；路径不决定平台。2026-10-03 的文档合并准备未执行提交 / 合并 / 推送；后续 Git 操作以当轮用户授权为准。发布源码不代表 USB / HDR / 广泛跨平台资格或二进制发行已完成。
 - 用户于 2026-10-03 确认 Windows x64 packages 可以编译打包 dev-linux 的共用代码。记录为用户反馈的编译打包证据，不虚构 run URL / 提交号，也不扩展为播放、安装 / 卸载、WASAPI / GPU 或退出回归通过。修改共用逻辑时继续回归受影响的 Windows / Linux 路径，环境缺失记待验证。
 - `.github/workflows/windows-release.yml` 在 master push 生成短期 Actions CI artifact（portable ZIP + NSIS x64 Setup）；没有自动创建 GitHub Release。NSIS 安装目标限定 x64 Windows。完整 libmpv build notices / corresponding-source arrangement 与 DLL 闭包完成后，才能把 CI 包作为正式二进制发行，不能以成功构建代替发行资格。
@@ -165,7 +173,7 @@ STATUS 中填写：当前任务 / 子步骤、改动文件、检查命令及结�
 
 ## 13. Windows 自动编译打包接续（2026-10-12）
 
-- 应用版本为 0.3.0，五个 workspace crate 继承根版本，提交 Cargo.lock；EXE 版本资源、NSIS 与包名从同一 Cargo 版本生成，不添加独立硬编码默认。
+- 当前 dev 应用版本为 0.3.1，五个 workspace crate 继承根版本，保留更新后的 Cargo.lock；EXE 版本资源、NSIS 与包名从同一 Cargo 版本生成，不添加独立硬编码默认。master 仅在授权合入 dev 后接收版本更新。
 - Package-Windows 在预检后自动执行 locked x64 MSVC Release build；使用本次 Cargo compiler-artifact.executable，检查实际退出码 / build-finished / 版本与 hash。不要恢复为读取固定旧 EXE，CI 不再另做重复编译。
 - 自定义 Cargo 产物目录放 target 子目录或仓库外；.gitignore 不替代暂存 diff 检查，不强制加入运行时二进制、包、缓存或用户配置。临时 NSIS 工具仅在 target 内使用，无需修改全局设置。
 - 修改打包执行 Test-WindowsPackaging，覆盖旧 EXE / 编译失败 / 自定义目录 / NSIS 失败 / 重试 / 已有包保护；兼容 PowerShell 5.1 / 7 原生 stderr。当前本机 ZIP / Setup 与独立启动证据见 docs/validation/windows-packaging.md，安装 / 卸载及正式发行资格仍待验。

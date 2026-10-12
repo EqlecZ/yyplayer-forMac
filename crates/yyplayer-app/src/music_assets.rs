@@ -16,6 +16,10 @@ pub struct Assets {
     pub artist: String,
     pub album: String,
     pub info: String,
+    pub file_type: String,
+    pub bitrate_kbps: Option<u32>,
+    pub sample_rate: Option<u32>,
+    pub bit_depth: Option<u8>,
     pub cover: Option<(u32, u32, Vec<u8>)>,
     pub cover_color: Option<u32>,
     pub lyrics: Lyrics,
@@ -133,6 +137,10 @@ fn read_assets(path: &Path, override_lyrics: Option<&Path>) -> Assets {
     let mut result = Assets::default();
     if let Ok(file) = lofty::probe::read_from_path(path) {
         let properties = file.properties();
+        result.file_type = format!("{:?}", file.file_type()).to_uppercase();
+        result.bitrate_kbps = properties.audio_bitrate();
+        result.sample_rate = properties.sample_rate();
+        result.bit_depth = properties.bit_depth();
         result.info = format!(
             "文件标签：{} Hz · {} bit · {} 声道 · {} kbps",
             properties

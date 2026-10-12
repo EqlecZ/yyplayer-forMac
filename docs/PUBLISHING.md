@@ -1,6 +1,6 @@
 # 源码与 GitHub 构建发布
 
-更新：2026-10-12。当前应用版本为 **0.3.0**，源码许可为 **GPL-3.0-only**。正式主分支为 `master`，已包含 Windows/Linux 共用代码、联网搜索、页面返回与歌词主题实现。提交、合并和推送按用户授权执行；本轮已授权合并两端 master，并将本地 / 远端 master 与 dev 同步到同一进度。
+更新：2026-10-12。当前 dev 开发版本为 **0.4.0**，源码许可为 **GPL-3.0-only**。唯一顶层开发分支与开发起点为 `dev`，`master` 仅合入 dev 的已验证改动，用于集成 / 发布。源码、版本、脚本与文档都在 dev 修改；合入冲突先回 dev 处理，再让 master 快进合入。提交、合入和推送按当轮授权执行；本轮在 dev 优化前端并更新 0.4.0，不合入 master 或推送。
 
 ## 共用源码与仓库目录
 
@@ -16,14 +16,14 @@ VS Code 打开完整仓库根目录，即包含 `.git`、Cargo.toml、Cargo.lock
 
 ## 当前主分支与提交内容
 
-Git 历史确认：Windows/Linux 共用代码在 `5390a3d`（2026-10-03，PR #4）合入 master；`e99d67c`（2026-10-11）包含联网搜索、前端与页面历史栈。0.3.0 的 Windows 打包脚本、版本与文档整理继续在 master 提交，不需要再次合并 dev-linux 或按系统切换分支。
+Git 历史确认：Windows/Linux 共用代码在 `5390a3d`（2026-10-03，PR #4）合入 master；`e99d67c`（2026-10-11）包含联网搜索、前端与页面历史栈；`c089cf7` 保留了两端 master 的 0.3.0 打包更新与歌词主题，并已同步两端 master / dev。这些为历史操作；后续修改仅从 dev 开始，master 只接收合入，不直接开发或提交修改。
 
 - 用户已确认：使用 **Windows x64 packages** 工作流，可以编译打包 `dev-linux` 内的共用代码。该证据限 Windows 编译与打包，没有提供 run URL / 提交号，也没有新增 Windows 播放、设备或安装回归记录。
 - Ubuntu 26.04 amd64 已有本机编译、Wayland 实际播放 / GPU、独立 X11 UI、deb / AppImage 提取启动与 hash 校验记录；干净系统安装、其他发行版和硬件资格仍按 STATUS 保留。
-- README、AGENTS 和开发 / 发布指南已按当前主分支、0.3.0 与自动编译打包更新。历史 STATUS / ADR 的分支与验收表述保留当时事实；最新状态见 [STATUS](STATUS.md)，2026-10-03 的准备过程见 [合并准备记录](validation/shared-source-merge-preparation.md)。
+- README、AGENTS 和开发 / 发布指南已按 dev 开发、master 仅合入与自动编译打包更新。历史 STATUS / ADR 的分支与验收表述保留当时事实；最新状态见 [STATUS](STATUS.md)，2026-10-03 的准备过程见 [合并准备记录](validation/shared-source-merge-preparation.md)。
 - Cargo.lock、LICENSE 和第三方记录保留；不提交 DLL / so、编译产物、下载缓存、用户媒体、用户配置或凭据。
 
-在仓库根目录检查当前分支、工作区与暂存 diff，将源码、脚本、Cargo.lock 和相关文档提交到目标分支。`.gitignore` 排除编译缓存、runtime 二进制、下载 archive、发行包与用户配置；不要强制加入这些文件。自定义 `CARGO_TARGET_DIR` 使用 target 子目录或仓库外目录，避免 Cargo 缓存进入版本控制。开发分支是否保留由用户决定，不要求按 Windows / Linux 分别维护两份应用源码。
+在仓库根目录检查当前分支、工作区与暂存 diff；所有源码、脚本、Cargo.lock 和文档修改先在 dev 完成，授权提交时也提交到 dev，master 只合入。`.gitignore` 排除编译缓存、runtime 二进制、下载 archive、发行包与用户配置；不要强制加入这些文件。自定义 `CARGO_TARGET_DIR` 使用 target 子目录或仓库外目录，避免 Cargo 缓存进入版本控制。不要求按 Windows / Linux 分别维护两份应用源码。
 
 只读复查命令：
 
@@ -61,6 +61,10 @@ git log -1 --oneline
 本地与 CI 共用 `scripts/Package-Windows.ps1`：脚本先执行 `cargo build --locked --release --target x86_64-pc-windows-msvc -p yyplayer-app --bin yyplayer`（另加 JSON 产物输出），成功后从本次 `compiler-artifact.executable` 取得实际 EXE，不再读取固定 target 路径。Cargo 的自定义产物目录继续生效，CI 已移除单独编译步骤，并运行隔离打包回归。
 
 本地用 `./scripts/Package-Windows.ps1`，依赖缓存完整时可加 `-Offline`；NSIS 不在 PATH / 标准安装目录时，用 `-NsisCompiler 'C:\Tools\NSIS\makensis.exe'`。提前准备固定 libmpv，脚本在编译前核验 DLL hash 与打包工具。ZIP 与 Setup 全部生成成功后移入 `dist/`，临时目录在成功 / 失败时清理，保留已有同版本 / 提交号的包。0.3.0 的 workspace、EXE 版本资源和安装器版本一致，`BUILD-INFO.txt` 记录 EXE hash 与工作区修改状态。命令、失败边界及安装验收限制见 [Windows 打包记录](validation/windows-packaging.md)。
+
+本地简便入口为根目录 `Package-Windows.cmd`：双击后用 pwsh / Windows PowerShell 5.1 启动，缺少固定 libmpv 时调用获取脚本，便携 NSIS 根据 `packaging/windows/nsis.json` 的归档 hash 准备，随后复用同一个编译打包入口。Rust / MSVC / Windows SDK / Git 仍由开发者准备。每次产物放入独立 `dist/windows-<时间>-<随机标识>/`，成功打开目录，按键关闭窗口；日志位于 `target/windows-packaging-runs/`。原有 CI 仍使用默认 `dist/` 路径与既有上传规则；新参数 `-OutputDirectory` 只用于自选输出。具体证据见 [双击打包验收](validation/windows-packaging-launcher.md)。
+
+0.3.1 在 dev 本地重新编译打包，EXE / Setup / 包名使用同一 Cargo 版本，记录见 [0.3.1 验收](validation/windows-packaging-0.3.1.md)。本地包不表示已合入 master；包内提交号和 working tree modified 状态保留真实生成时信息。
 
 ### Linux 产物
 

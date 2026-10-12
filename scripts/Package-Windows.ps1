@@ -1,6 +1,7 @@
 param(
     [switch]$Offline,
-    [string]$NsisCompiler = ''
+    [string]$NsisCompiler = '',
+    [string]$OutputDirectory = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -8,7 +9,7 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $runtimeRoot = Join-Path $projectRoot 'third_party/mpv/windows-x64'
 $appIconPath = Join-Path $projectRoot 'assets/icons/yyplayer/liquid-orbit-disc/yyplayer.ico'
 $target = 'x86_64-pc-windows-msvc'
-$distRoot = Join-Path $projectRoot 'dist'
+$distRoot = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $projectRoot 'dist' }
 $tempRoot = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { [IO.Path]::GetTempPath() }
 $tempRoot = [IO.Path]::GetFullPath($tempRoot)
 $workRoot = Join-Path $tempRoot ('yyplayer-windows-x64-' + [Guid]::NewGuid().ToString('N'))
@@ -74,7 +75,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Could not read the source working tree status.
 $shortCommit = $commit.Substring(0, [Math]::Min(12, $commit.Length))
 $portableZip = Join-Path $distRoot "YYPlayer-$version-$shortCommit-windows-x64-portable.zip"
 $setupExe = Join-Path $distRoot "YYPlayer-$version-$shortCommit-windows-x64-setup.exe"
-if ((Test-Path -LiteralPath $portableZip) -or (Test-Path -LiteralPath $setupExe)) { throw 'A package for this commit already exists in dist.' }
+if ((Test-Path -LiteralPath $portableZip) -or (Test-Path -LiteralPath $setupExe)) { throw "A package for this commit already exists in $distRoot." }
 
 # Always build, and only use the executable reported by this successful Cargo invocation.
 # This also supports CARGO_TARGET_DIR / build.target-dir without guessing a path.

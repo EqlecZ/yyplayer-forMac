@@ -208,16 +208,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             w.window().request_redraw();
             if since.elapsed() > Duration::from_secs(10) { return Err(format!("Stage timed out: {}", pixel_wait_error.as_deref().unwrap_or("UI or media state")).into()); }
             let elapsed = since.elapsed().as_millis();
-            if matches!(stage, 2 | 12 | 13 | 14 | 15 | 18 | 19 | 20) {
-                trajectory.push(serde_json::json!({"stage":stage,"ms":elapsed,"page":m.page,"progress":w.get_cover_progress(),"x":w.get_moving_cover_x(),"y":w.get_moving_cover_y(),"size":w.get_moving_cover_size(),"opacity":w.get_content_opacity(),"travelling":w.get_cover_travelling(),"theme_mix":w.get_lyrics_theme_mix(),"accent":format!("#{:06x}",color_rgb(w.get_display_accent())),"background":format!("#{:06x}",color_rgb(w.get_display_background()))}));
-                if matches!(stage, 2 | 12) && w.get_lyrics_theme_mix() > 0.3 && w.get_lyrics_theme_mix() < 0.7 && transition_shots.insert(stage) {
-                    pending_motion.borrow_mut().push(motion_shot(&w, if stage == 2 { "theme-enter-middle" } else { "theme-return-middle" })?);
+            if matches!(stage, 2 | 12 | 13 | 14 | 15 | 18 | 19 | 20 | 45 | 46) {
+                trajectory.push(serde_json::json!({"stage":stage,"ms":elapsed,"page":m.page,"progress":w.get_cover_progress(),"x":w.get_moving_cover_x(),"y":w.get_moving_cover_y(),"size":w.get_moving_cover_size(),"content_x":w.get_lyric_content_x(),"content_y":w.get_lyric_content_y(),"center":w.get_lyric_active_center(),"viewport":w.get_lyric_viewport_height(),"scroll":w.get_lyric_scroll_y(),"opacity":w.get_content_opacity(),"travelling":w.get_cover_travelling(),"theme_mix":w.get_lyrics_theme_mix(),"accent":format!("#{:06x}",color_rgb(w.get_display_accent())),"background":format!("#{:06x}",color_rgb(w.get_display_background()))}));
+                if matches!(stage, 2 | 12 | 45 | 46) && w.get_lyrics_theme_mix() > 0.3 && w.get_lyrics_theme_mix() < 0.7 && transition_shots.insert(stage) {
+                    pending_motion.borrow_mut().push(motion_shot(&w, match stage { 2 => "theme-enter-middle", 12 => "theme-return-middle", 45 => "late-enter-middle", _ => "late-return-middle" })?);
                 }
             }
             let wait = match stage { 13 => 120, 14 => 80, _ => 850 };
             if elapsed < wait { return Ok(()); }
             let size = w.window().size().to_logical(w.window().scale_factor());
-            macro_rules! ensure { ($condition:expr, $message:expr) => { if !$condition { return Err($message.into()); } }; }
+            macro_rules! ensure { ($condition:expr, $message:expr) => { if $condition {} else { return Err($message.into()); } }; }
             macro_rules! pixels_ready { ($checkbox:expr) => {
                 match control_pixels(&w, $checkbox) {
                     Ok(sample) => { pixels.push(sample); pixel_wait_error = None; },
@@ -241,8 +241,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 1 => { ensure!(m.page == 0 && !m.playing, "Browse / actual pause missing"); ensure!(near_color(color_rgb(w.get_display_accent()), m.appearance.accent, 2), "Browse theme was contaminated by artwork"); pixels_ready!(false); shot(&w, "browse")?; click(&w, 44., size.height - 40.); }
                 2 => {
                     ensure!(m.page == 4 && w.get_content_opacity() > 0.99 && (w.get_cover_progress() - 1.).abs() < 0.001, "Entrance failed");
-                    ensure!(trajectory.iter().any(|r| r["progress"].as_f64().is_some_and(|v| v > 0.05 && v < 0.95)), "Cover skipped its journey");
-                    ensure!(trajectory.iter().any(|r| r["progress"].as_f64().is_some_and(|v| v > 1.001)), "Cover bounce missing");
+                    ensure!(!release_motion || trajectory.iter().any(|r| r["progress"].as_f64().is_some_and(|v| v > 0.05 && v < 0.95)), "Cover skipped its journey");
+                    ensure!(!release_motion || trajectory.iter().any(|r| r["progress"].as_f64().is_some_and(|v| v > 1.001)), "Cover bounce missing");
                     ensure!(w.get_lyrics_theme_mix() > 0.999 && near_color(color_rgb(w.get_display_accent()), coral, 2), "Whole lyric page theme missing");
                     pixels_ready!(false);
                     centered(&w)?; shot(&w, "coral-bilingual")?;
@@ -281,6 +281,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 17 => { ensure!(!m.appearance.dark, "Light scheme missing"); centered(&w)?; shot(&w, "light-bilingual")?; test.borrow_mut().open_paths(vec![root.join("media/blue.wav")]); ensure!(test.borrow().view_model().audio.cover_color.is_none(), "Previous cover palette survived new media"); }
                 18 => {
                     let Some(rgb) = m.audio.cover_color else { return Ok(()); };
+                    if m.playing { test.borrow_mut().engine_mut().submit(PlaybackCommand::Pause)?; return Ok(()); }
                     ensure!(rgb != coral && (rgb & 255) > (rgb >> 16), "New album theme was not projected");
                     if !near_color(color_rgb(w.get_display_accent()), rgb, 2) { return Ok(()); }
                     if elapsed < 1450 { return Ok(()); }
@@ -290,6 +291,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 19 => {
                     if !m.has_media || !m.selected_title.contains("no-cover") || !m.audio.lyrics.is_empty() { return Ok(()); }
+                    if m.playing { test.borrow_mut().engine_mut().submit(PlaybackCommand::Pause)?; return Ok(()); }
                     ensure!(m.audio.cover_color.is_none() && m.audio.cover.size().width == 0, "Missing cover didn't fall back");
                     ensure!(w.get_lyrics_accent().red() == ((m.appearance.accent >> 16) & 255) as u8, "Global theme fallback missing");
                     if !near_color(color_rgb(w.get_display_accent()), m.appearance.accent, 2) { return Ok(()); }
@@ -298,6 +300,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 20 => {
                     if m.audio.plain_lyrics.is_empty() || m.audio.cover_color.is_none() { return Ok(()); }
+                    if m.playing { test.borrow_mut().engine_mut().submit(PlaybackCommand::Pause)?; return Ok(()); }
                     ensure!(m.audio.lyrics.is_empty() && w.get_plain_lyric_lines().row_count() == 3, "Plain lyric display missing");
                     if !near_color(color_rgb(w.get_display_accent()), m.audio.cover_color.unwrap(), 2) { return Ok(()); }
                     pixels_ready!(false);
@@ -317,7 +320,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 31 => { ensure!(w.get_shortcuts_blocked(), "Speed popup did not protect keyboard focus"); shot(&w, "speed-popup-themed")?; let index = m.speed_choices.iter().position(|s| s == "1.5x").ok_or("Speed choice missing")?; let popup_height = (m.speed_choices.len() as f32 * 32. + 8.).min(280.); click(&w, size.width - 304., size.height - 57. - popup_height + index as f32 * 32. + 16.); }
                 32 => { ensure!(m.speed_choices[m.speed_index as usize] == "1.5x", "Actual themed speed popup selection failed"); control(&test, "speed", "1x"); control(&test, "panel", ""); }
                 33 => { ensure!(m.panel_open, "Themed playback panel missing"); ensure!(m.speed_choices[m.speed_index as usize] == "1x" && w.get_actual_speed_label() == "1x", format!("Speed reset mismatch: actual {}, displayed {}", m.speed_choices[m.speed_index as usize], w.get_actual_speed_label())); shot(&w, "playback-panel-themed")?; control(&test, "panel", ""); }
-                34 => { ensure!(w.get_render_initializations() == 0 && w.get_render_error().is_empty(), "Audio initialized an mpv renderer"); let snap = test.borrow_mut().engine_mut().snapshot().clone(); ensure!(snap.ready && snap.error.is_empty() && matches!(snap.phase, PlaybackPhase::Paused | PlaybackPhase::Playing), "Actual audio path failed"); ensure!(trajectory.iter().filter(|v| v["stage"] == 2 && v["theme_mix"].as_f64().is_some_and(|t| t > 0.1 && t < 0.9)).count() >= 2, "Page theme jumped directly between colors"); ensure!(trajectory.iter().filter(|v| v["stage"] == 18).filter_map(|v| v["accent"].as_str()).collect::<std::collections::BTreeSet<_>>().len() > 2, "Song theme did not interpolate"); control(&test, "background-lyrics-style", "2"); control(&test, "lyrics-style-line-gap", "31"); w.window().set_size(slint::LogicalSize::new(1000., 640.)); }
+                34 => { ensure!(w.get_render_initializations() == 0 && w.get_render_error().is_empty(), "Audio initialized an mpv renderer"); let snap = test.borrow_mut().engine_mut().snapshot().clone(); ensure!(snap.ready && snap.error.is_empty() && matches!(snap.phase, PlaybackPhase::Paused | PlaybackPhase::Playing), "Actual audio path failed"); ensure!(!release_motion || trajectory.iter().filter(|v| v["stage"] == 2 && v["theme_mix"].as_f64().is_some_and(|t| t > 0.1 && t < 0.9)).count() >= 2, "Page theme jumped directly between colors"); ensure!(trajectory.iter().filter(|v| v["stage"] == 18).filter_map(|v| v["accent"].as_str()).collect::<std::collections::BTreeSet<_>>().len() > 2, "Song theme did not interpolate"); control(&test, "background-lyrics-style", "2"); control(&test, "lyrics-style-line-gap", "31"); w.window().set_size(slint::LogicalSize::new(1000., 640.)); }
                 35 => { ensure!(size.width == 1000. && w.get_lyrics_background_style() == 2, "Minimum legacy background missing"); pixels_ready!(false); shot(&w, "legacy-minimum-themed")?; click(&w, size.width - 165., 73.); }
                 36 => { ensure!(w.get_lyric_options_open() && w.get_lyric_options_height() > 300., "Minimum style panel collapsed"); pixels_ready!(true); shot(&w, "styles-minimum-themed")?; w.window().dispatch_event(slint::platform::WindowEvent::PointerScrolled { position: slint::LogicalPosition::new(size.width - 150., 400.), delta_x: 0., delta_y: -800. }); }
                 37 => { shot(&w, "styles-minimum-bottom")?; click(&w, size.width - 180., size.height - 155.); }
@@ -325,7 +328,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 39 => { pixels_ready!(true); shot(&w, "styles-minimum-reset")?; click(&w, w.get_lyric_increase_x(), w.get_lyric_increase_y()); }
                 40 => { ensure!(m.audio.lyric_style.line_gap == 25, "Style control did not follow reset value"); control(&test, "lyrics-style-reset", ""); control(&test, "background-lyrics-style", "0"); control(&test, "speed", "1.37x"); }
                 41 => { ensure!(m.speed_choices[m.speed_index as usize] == "1.37x" && w.get_actual_speed_label() == "1.37x", "Non-preset actual speed display failed"); shot(&w, "speed-nonpreset-themed")?; control(&test, "speed", "1x"); }
-                42 => { ensure!(m.speed_choices[m.speed_index as usize] == "1x" && w.get_actual_speed_label() == "1x", "Actual speed did not restore after non-preset"); done.set(true); slint::quit_event_loop()?; }
+                42 => { ensure!(m.speed_choices[m.speed_index as usize] == "1x" && w.get_actual_speed_label() == "1x", "Actual speed did not restore after non-preset"); test.borrow_mut().open_paths(vec![root.join("media/coral.wav")]); }
+                43 => { if !m.selected_title.contains("coral") || m.audio.lyrics.len() != 20 { return Ok(()); } test.borrow_mut().engine_mut().submit(PlaybackCommand::Pause)?; control(&test, "lyrics-seek", "39300"); control(&test, "music-browse", ""); }
+                44 => { ensure!(m.page == 0 && m.audio.active_lyric == 13, "Late-entry fixture was not paused on line 13"); click(&w, 44., size.height - 40.); }
+                45 => {
+                    ensure!(m.page == 4 && m.audio.active_lyric == 13, "Late-entry active line changed"); centered(&w)?;
+                    let samples: Vec<_> = trajectory.iter().filter(|v| v["stage"] == 45 && v["progress"].as_f64().is_some_and(|p| p > 0.05 && p < 0.95)).collect();
+                    ensure!(!samples.is_empty(), "Late entry skipped the shared motion");
+                    for sample in &samples { ensure!((sample["center"].as_f64().unwrap() - sample["viewport"].as_f64().unwrap() / 2.).abs() < 2., "Late entry scrolled from the start instead of pre-positioning"); }
+                    ensure!(samples.iter().any(|v| v["content_y"].as_f64().is_some_and(|p| p > 20.)), "Lyrics / metadata faded in place");
+                    ensure!(m.audio.technical_info.contains("WAV | 1411 kbps | 44.1 kHz | 16 bit | WASAPI"), "Source properties / actual backend summary missing");
+                    shot(&w, "late-entry-centered")?; click(&w, w.get_moving_cover_x() + w.get_moving_cover_size() / 2., w.get_moving_cover_y() + w.get_moving_cover_size() / 2.);
+                }
+                46 => { ensure!(m.page == 0 && !w.get_cover_travelling(), "Late return did not settle"); ensure!(trajectory.iter().any(|v| v["stage"] == 46 && v["content_y"].as_f64().is_some_and(|p| p > 20.) && v["progress"].as_f64().is_some_and(|p| p > 0.05 && p < 0.95)), "Return content did not follow the cover"); w.window().set_size(slint::LogicalSize::new(1240.,900.)); test.borrow_mut().dispatch(UiAction::Navigate(3)); }
+                47 => { if w.get_settings_section() != 2 { click(&w, w.get_content_left() + 299., 176.); since = Instant::now(); return Ok(()); } shot(&w,"settings-shortcuts-card")?; click(&w, w.get_content_left() + 417., 176.); }
+                48 => { shot(&w,"settings-online-card")?; click(&w, w.get_content_left() + 526., 176.); }
+                49 => { shot(&w,"settings-lyrics-card")?; w.window().set_size(slint::LogicalSize::new(1000.,640.)); click(&w, w.get_content_left() + 299., 176.); }
+                50 => { shot(&w,"settings-shortcuts-minimum")?; click(&w, w.get_content_left() + 417., 176.); }
+                51 => { shot(&w,"settings-online-minimum")?; click(&w, w.get_content_left() + 526., 176.); }
+                52 => { shot(&w,"settings-lyrics-minimum")?; done.set(true); slint::quit_event_loop()?; }
                 _ => unreachable!(),
             }
             records.push(serde_json::json!({"stage":stage,"page":m.page,"active":m.audio.active_lyric,"cover_color":m.audio.cover_color.map(|c|format!("#{c:06x}")),"cover_progress":w.get_cover_progress(),"center":w.get_lyric_active_center(),"viewport":w.get_lyric_viewport_height(),"scroll":w.get_lyric_scroll_y(),"style":m.audio.lyric_style,"width":size.width,"height":size.height,"opacity":w.get_content_opacity(),"theme_mix":w.get_lyrics_theme_mix(),"accent":format!("#{:06x}",color_rgb(w.get_display_accent())),"surface":format!("#{:06x}",color_rgb(w.get_display_surface())),"actual_speed":m.speed_choices[m.speed_index as usize],"speed_label":w.get_actual_speed_label().to_string()}));

@@ -14,6 +14,7 @@ export component NowPlaying inherits Rectangle {
     in property <color> accent; in property <color> accent-text;
     in property <bool> hide-artwork;
     in property <bool> options-open;
+    in property <bool> travelling;
     callback options-toggled(bool);
     out property <bool> has-lyrics: root.lyrics.length > 0 || root.plain-lines.length > 0;
     out property <length> column-width: (root.width - 108px - (root.has-lyrics ? 56px : 0px)) / (root.has-lyrics ? 2 : 1);
@@ -38,15 +39,18 @@ export component NowPlaying inherits Rectangle {
     }
     VerticalLayout { x: 54px; y: root.cover-y + root.cover-size + 20px; width: root.column-width; height: 120px; spacing: 6px; alignment: start;
         Text { text: root.title; color: Theme.text; font-size: 25px; font-weight: 600; horizontal-alignment: center; overflow: elide; height: 34px; }
-        Text { text: root.artist == "" ? "本地音乐" : root.artist; color: Theme.muted; font-size: 14px; height: 24px; horizontal-alignment: center; overflow: elide; }
-        if root.album != "": Text { text: root.album; color: Theme.faint; font-size: 12px; height: 20px; horizontal-alignment: center; overflow: elide; }
-        Text { text: root.output-status; color: Theme.faint; font-size: 11px; height: 18px; horizontal-alignment: center; overflow: elide; }
+        Text { text: (root.artist == "" ? "本地音乐" : root.artist) + (root.album == "" ? "" : " · " + root.album); color: Theme.muted; font-size: 16px; height: 28px; horizontal-alignment: center; overflow: elide; }
+        Text { text: root.output-status; color: Theme.faint; font-size: 12px; min-height: 36px; horizontal-alignment: center; wrap: word-wrap; }
     }
     if root.has-lyrics: Rectangle {
         x: 54px + root.column-width + 56px; y: 76px; width: root.column-width; height: parent.height - 110px;
         clip: true;
         lyrics-view := ScrollView {
             width: parent.width; height: parent.height; viewport-width: self.width;
+            private property <bool> positioned;
+            // Complete layout and position before entry; subsequent line changes
+            // may scroll smoothly, but opening a page never traverses the song.
+            Timer { interval: 16ms; running: !lyrics-view.positioned; triggered => { lyrics-view.follow(); lyrics-view.positioned = true; } }
             function follow() {
                 if root.active >= 0 && root.lyrics.length > 0 {
                     self.viewport-y = -min(max(0px, root.active-y + root.active-height / 2 - self.height / 2), max(0px, self.viewport-height - self.height));
@@ -56,7 +60,7 @@ export component NowPlaying inherits Rectangle {
             changed height => { self.follow(); }
             changed viewport-height => { self.follow(); }
             changed viewport-y => { root.geometry((root.active-y + root.active-height / 2 + self.viewport-y) / 1px, self.height / 1px, self.viewport-y / 1px); }
-            animate viewport-y { duration: Theme.reduced-motion ? 0ms : 360ms; easing: ease-in-out; }
+            animate viewport-y { duration: Theme.reduced-motion || !root.interactive || root.travelling || !self.positioned ? 0ms : 360ms; easing: ease-in-out; }
             VerticalLayout {
                 spacing: 0px; padding-top: root.lyrics.length > 0 ? lyrics-view.height / 2 : 0px; padding-bottom: self.padding-top;
                 for line[index] in (root.lyrics.length > 0 ? root.lyrics : root.plain-lines): LyricLine {

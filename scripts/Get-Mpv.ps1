@@ -6,10 +6,17 @@ if (-not $Destination) { $Destination = Join-Path $projectRoot 'third_party/mpv/
 $runtimeDirectory = [IO.Path]::GetFullPath($Destination)
 New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
 $archivePath = Join-Path $runtimeDirectory 'runtime.7z'
-Invoke-WebRequest -Uri $manifest.archive_url -OutFile $archivePath
+Invoke-WebRequest -UseBasicParsing -Uri $manifest.archive_url -OutFile $archivePath
 if ((Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $manifest.archive_sha256) { throw 'libmpv archive checksum mismatch' }
-& tar.exe -xf $archivePath -C $runtimeDirectory
-$sevenZip = Get-Command 7z.exe -ErrorAction SilentlyContinue
+$sevenZip = Get-Command 7z.exe -CommandType Application -ErrorAction SilentlyContinue
+if (-not $sevenZip) {
+    foreach ($installRoot in @($env:ProgramFiles, ${env:ProgramFiles(x86)})) {
+        if ($installRoot) {
+            $candidate = Join-Path $installRoot '7-Zip/7z.exe'
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) { $sevenZip = Get-Command $candidate -CommandType Application; break }
+        }
+    }
+}
 if ($sevenZip) {
     & $sevenZip.Source x $archivePath "-o$runtimeDirectory" -y | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Extraction failed with 7-Zip after the archive checksum passed.' }

@@ -109,6 +109,7 @@ pub struct AudioViewModel {
     pub active_lyric: i32,
     pub album: String,
     pub status: String,
+    pub technical_info: String,
     pub origin: String,
     pub mode: i32,
     pub preserve_rate: bool,

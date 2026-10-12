@@ -29,7 +29,7 @@ Write-Fixture 'Cargo.toml' @'
 members = ["crates/yyplayer-app"]
 resolver = "3"
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 '@
 Write-Fixture 'crates/yyplayer-app/Cargo.toml' @'
 [package]
@@ -85,8 +85,11 @@ try {
     New-Item -ItemType Directory -Path $env:RUNNER_TEMP | Out-Null
     $env:YYPLAYER_PACKAGE_STAGE = 'previous-stage'
     $env:YYPLAYER_PACKAGE_OUTPUT = 'previous-output'
+    $ErrorActionPreference = 'Continue'
     & cargo generate-lockfile --offline --manifest-path (Join-Path $workspace 'Cargo.toml') *> (Join-Path $testRoot 'lockfile.log')
-    if ($LASTEXITCODE -ne 0) { throw 'Could not generate the dependency-free fixture lockfile.' }
+    $lockExitCode = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
+    if ($lockExitCode -ne 0) { throw 'Could not generate the dependency-free fixture lockfile.' }
 
     Write-Fixture 'third_party/mpv/windows-x64/libmpv-2.dll' 'corrupt fixture'
     Invoke-FixturePackage 'runtime-hash-failure' 'pinned manifest hash'
@@ -103,7 +106,7 @@ try {
     $builtExe = Join-Path $env:CARGO_TARGET_DIR 'x86_64-pc-windows-msvc/release/yyplayer.exe'
     $builtHash = (Get-FileHash -LiteralPath $builtExe).Hash
     if ((Get-FileHash -LiteralPath (Join-Path $extracted 'yyplayer.exe')).Hash -ne $builtHash) { throw 'ZIP contains the wrong executable.' }
-    if ((Get-Item -LiteralPath (Join-Path $extracted 'yyplayer.exe')).VersionInfo.ProductVersion -ne '0.3.0') { throw 'ZIP has the wrong application version.' }
+    if ((Get-Item -LiteralPath (Join-Path $extracted 'yyplayer.exe')).VersionInfo.ProductVersion -ne '0.4.0') { throw 'ZIP has the wrong application version.' }
     $buildInfo = Get-Content -LiteralPath (Join-Path $extracted 'BUILD-INFO.txt') -Raw
     if ($buildInfo -notmatch $builtHash.ToLowerInvariant()) { throw 'BUILD-INFO does not identify the packaged executable.' }
     $results.Add('zip-artifact-hash-and-version')

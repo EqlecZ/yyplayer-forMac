@@ -298,6 +298,7 @@ fn project(window: &AppWindow, state: &ShellViewModel) {
     window.set_preview(audio.preview);
     window.set_active_lyric(audio.active_lyric);
     window.set_audio_status(audio.status.as_str().into());
+    window.set_song_technical_info(audio.technical_info.as_str().into());
     window.set_eq_origin(audio.origin.as_str().into());
     window.set_eq_binding(audio.binding.as_str().into());
     window.set_eq_headroom_text(audio.headroom.as_str().into());

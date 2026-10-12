@@ -117,6 +117,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let result=(||->Result<(),Box<dyn std::error::Error>>{
             let m={let mut c=state.borrow_mut();c.tick();c.request_online_covers(w.get_online_visible_first(),w.get_online_visible_count());c.view_model()};
             tick_project(&m);
+            // Winit/FemtoVG snapshots read the last back buffer. Refresh both
+            // buffers over timer turns before capturing a paused/static page.
+            w.window().request_redraw();
             if stable_revision!=m.online.revision {stable_revision=m.online.revision;stable_since=Instant::now();}
             if since.elapsed()>Duration::from_secs(75){shot(&w,"timeout")?;return Err(format!("stage {stage} timeout: {} / {}; rows={}, visible_first={}, more={}, busy={}",m.online.message,m.status,m.online.rows.len(),w.get_online_visible_first(),m.online.more,m.online.busy).into());}
             let mut c=state.borrow_mut();let snapshot=c.engine_mut().snapshot().clone();
@@ -200,9 +203,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     c.dispatch(UiAction::Navigate(3));stage=25;since=Instant::now();return Ok(());
                 },
                 25 if m.page==3&&w.get_content_opacity()>0.99&&since.elapsed()>Duration::from_millis(650)=>{drop(c);click(&w,w.get_content_left()+417.,178.);},
-                26 if m.page==3&&since.elapsed()>Duration::from_millis(650)=>{shot(&w,"settings-open-folder")?;drop(c);click(&w,996.,431.);},
+                26 if m.page==3&&since.elapsed()>Duration::from_millis(650)=>{shot(&w,"settings-open-folder")?;drop(c);click(&w,955.,454.);},
                 27 if m.status=="已打开 API 配置文件夹"=>{folder_notice=m.status_revision;records.push(serde_json::json!({"stage":"open-api-directory","path":m.online.directories[0]}));control(&mut c,"online-directory-reset","0");},
-                28 if !m.online.busy&&m.online.directories[0]!=root.join("api").to_string_lossy()&&since.elapsed()>Duration::from_millis(650)=>{drop(c);click(&w,996.,431.);},
+                28 if !m.online.busy&&m.online.directories[0]!=root.join("api").to_string_lossy()&&since.elapsed()>Duration::from_millis(650)=>{drop(c);click(&w,955.,454.);},
                 29 if m.status=="已打开 API 配置文件夹"&&m.status_revision>folder_notice&&since.elapsed()>Duration::from_millis(650)=>{
                     let expected=std::env::current_exe()?.parent().ok_or("Missing exe directory")?.join("config/cloud_api");
                     if !expected.is_dir()||m.online.directories[0]!=expected.to_string_lossy(){return Err("Opening the default API directory did not resolve/create the effective path".into());}
