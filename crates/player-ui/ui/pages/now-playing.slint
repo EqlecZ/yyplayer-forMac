@@ -14,21 +14,48 @@ export component NowPlaying inherits Rectangle {
     in property <color> accent; in property <color> accent-text;
     in property <bool> hide-artwork;
     in property <bool> options-open;
+    in property <bool> travelling;
+    in property <float> journey-progress: 1;
+    in property <length> journey-origin-x;
+    in property <length> journey-origin-y;
+    callback motion-geometry(float, float, float, float, float, float);
     callback options-toggled(bool);
     out property <bool> has-lyrics: root.lyrics.length > 0 || root.plain-lines.length > 0;
     out property <length> column-width: (root.width - 108px - (root.has-lyrics ? 56px : 0px)) / (root.has-lyrics ? 2 : 1);
     out property <length> cover-size: min(350px, root.column-width, max(150px, root.height - 250px));
     out property <length> cover-x: 54px + (root.column-width - root.cover-size) / 2;
     out property <length> cover-y: 76px + max(0px, (root.height - 110px - root.cover-size - 140px) / 2);
+    // Move each region's center towards the same bottom-left cover anchor.
+    // Keep its size fixed so moving lyrics never rewrap or lose their scroll position.
+    private property <length> header-width: style-button.preferred-width + playback-button.preferred-width + 10px;
+    private property <length> header-center-x: root.journey-origin-x + (root.width - 26px - root.header-width / 2 - root.journey-origin-x) * root.journey-progress;
+    private property <length> header-center-y: root.journey-origin-y + (37px - root.journey-origin-y) * root.journey-progress;
+    private property <length> song-center-x: root.journey-origin-x + (54px + root.column-width / 2 - root.journey-origin-x) * root.journey-progress;
+    private property <length> song-center-y: root.journey-origin-y + (root.cover-y + root.cover-size + 80px - root.journey-origin-y) * root.journey-progress;
+    private property <length> lyrics-center-x: root.journey-origin-x + (110px + root.column-width * 1.5 - root.journey-origin-x) * root.journey-progress;
+    private property <length> lyrics-center-y: root.journey-origin-y + (76px + (root.height - 110px) / 2 - root.journey-origin-y) * root.journey-progress;
+    function report-motion() {
+        root.motion-geometry(root.header-center-x / 1px, root.header-center-y / 1px, root.song-center-x / 1px, root.song-center-y / 1px, root.lyrics-center-x / 1px, root.lyrics-center-y / 1px);
+    }
+    changed journey-progress => { root.report-motion(); }
+    changed width => { root.report-motion(); }
+    changed height => { root.report-motion(); }
+    changed header-width => { root.report-motion(); }
     private property <length> active-y;
     private property <length> active-height;
     callback control(string,string);
     callback geometry(float, float, float);
     background: transparent;
-    HorizontalLayout { x: 26px; y: 20px; width: parent.width - 52px; height: 34px; spacing: 10px;
-        Text { text: "正在聆听"; color: Theme.faint; vertical-alignment: center; font-size: 11px; horizontal-stretch: 1; }
-        Button { text: "歌词样式"; enabled: root.interactive; clicked => { root.options-toggled(!root.options-open); } }
-        Button { text: "播放选项"; enabled: root.interactive; clicked => { root.options-toggled(false); root.control("panel", ""); } }
+    Text {
+        x: root.journey-origin-x + (26px + self.width / 2 - root.journey-origin-x) * root.journey-progress - self.width / 2;
+        y: root.header-center-y - 17px; width: self.preferred-width; height: 34px;
+        text: "正在聆听"; color: Theme.faint; vertical-alignment: center; font-size: 11px;
+    }
+    HorizontalLayout { x: root.header-center-x - self.width / 2; y: root.header-center-y - 17px; width: root.header-width; height: 34px; spacing: 10px;
+        // During travel only the shared fade changes their opacity, rather than
+        // also jumping to the button's usual disabled dimming.
+        style-button := Button { text: "歌词样式"; opacity: 1; enabled: root.interactive; clicked => { root.options-toggled(!root.options-open); } }
+        playback-button := Button { text: "播放选项"; opacity: 1; enabled: root.interactive; clicked => { root.options-toggled(false); root.control("panel", ""); } }
     }
     MusicArt { x: root.cover-x; y: root.cover-y; width: root.cover-size; height: self.width;
         visible: !root.hide-artwork; artwork: root.artwork; playing: root.playing; animated: true;
@@ -36,17 +63,20 @@ export component NowPlaying inherits Rectangle {
         focus := FocusScope { key-pressed(event) => { if root.can-go-back && root.interactive && (event.text == " " || event.text == "\n") { root.control("page-back", ""); return accept; } return reject; } }
         TouchArea { enabled: root.can-go-back && root.interactive; mouse-cursor: pointer; clicked => { focus.focus(); root.control("page-back", ""); } }
     }
-    VerticalLayout { x: 54px; y: root.cover-y + root.cover-size + 20px; width: root.column-width; height: 120px; spacing: 6px; alignment: start;
+    VerticalLayout { x: root.song-center-x - self.width / 2; y: root.song-center-y - 60px; width: root.column-width; height: 120px; spacing: 6px; alignment: start;
         Text { text: root.title; color: Theme.text; font-size: 25px; font-weight: 600; horizontal-alignment: center; overflow: elide; height: 34px; }
-        Text { text: root.artist == "" ? "本地音乐" : root.artist; color: Theme.muted; font-size: 14px; height: 24px; horizontal-alignment: center; overflow: elide; }
-        if root.album != "": Text { text: root.album; color: Theme.faint; font-size: 12px; height: 20px; horizontal-alignment: center; overflow: elide; }
-        Text { text: root.output-status; color: Theme.faint; font-size: 11px; height: 18px; horizontal-alignment: center; overflow: elide; }
+        Text { text: (root.artist == "" ? "本地音乐" : root.artist) + (root.album == "" ? "" : " · " + root.album); color: Theme.muted; font-size: 16px; height: 28px; horizontal-alignment: center; overflow: elide; }
+        Text { text: root.output-status; color: Theme.faint; font-size: 12px; min-height: 36px; horizontal-alignment: center; wrap: word-wrap; }
     }
     if root.has-lyrics: Rectangle {
-        x: 54px + root.column-width + 56px; y: 76px; width: root.column-width; height: parent.height - 110px;
+        x: root.lyrics-center-x - self.width / 2; y: root.lyrics-center-y - self.height / 2; width: root.column-width; height: parent.height - 110px;
         clip: true;
         lyrics-view := ScrollView {
             width: parent.width; height: parent.height; viewport-width: self.width;
+            private property <bool> positioned;
+            // Complete layout and position before entry; subsequent line changes
+            // may scroll smoothly, but opening a page never traverses the song.
+            Timer { interval: 16ms; running: !lyrics-view.positioned; triggered => { lyrics-view.follow(); lyrics-view.positioned = true; } }
             function follow() {
                 if root.active >= 0 && root.lyrics.length > 0 {
                     self.viewport-y = -min(max(0px, root.active-y + root.active-height / 2 - self.height / 2), max(0px, self.viewport-height - self.height));
@@ -56,7 +86,7 @@ export component NowPlaying inherits Rectangle {
             changed height => { self.follow(); }
             changed viewport-height => { self.follow(); }
             changed viewport-y => { root.geometry((root.active-y + root.active-height / 2 + self.viewport-y) / 1px, self.height / 1px, self.viewport-y / 1px); }
-            animate viewport-y { duration: Theme.reduced-motion ? 0ms : 360ms; easing: ease-in-out; }
+            animate viewport-y { duration: Theme.reduced-motion || !root.interactive || root.travelling || !self.positioned ? 0ms : 360ms; easing: ease-in-out; }
             VerticalLayout {
                 spacing: 0px; padding-top: root.lyrics.length > 0 ? lyrics-view.height / 2 : 0px; padding-bottom: self.padding-top;
                 for line[index] in (root.lyrics.length > 0 ? root.lyrics : root.plain-lines): LyricLine {

@@ -1,5 +1,6 @@
 import { ScrollView, LineEdit, SpinBox, Button } from "std-widgets.slint";
 import { Theme } from "../theme.slint";
+import { GlassSurface } from "../components/glass.slint";
 import { FontOptions } from "../components/font-options.slint";
 import { AppearanceOptions } from "../components/appearance-options.slint";
 import { ShortcutRow } from "../models.slint";
@@ -32,16 +33,24 @@ export component SettingsPage inherits Rectangle {
             }
             if root.section == 0: AppearanceOptions { lyrics-color: root.lyrics-color; design: root.design; scheme: root.scheme; system-accent: root.system-accent; custom-accent: root.custom-accent; reduced: root.reduced; os-reduced: root.os-reduced; system-available: root.system-available; library-background-style: root.library-background-style; library-background-opacity: root.library-background-opacity; library-background-blur: root.library-background-blur; library-background-name: root.library-background-name; custom-library-background: root.custom-library-background; lyrics-background-style: root.lyrics-background-style; lyrics-background-opacity: root.lyrics-background-opacity; lyrics-background-blur: root.lyrics-background-blur; lyrics-background-name: root.lyrics-background-name; custom-lyrics-background: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
             if root.section == 1: FontOptions { names: root.font-names; lyric-names: root.font-lyric-names; subtitle-names: root.font-subtitle-names; ui-index: root.font-ui-index; lyric-index: root.font-lyric-index; subtitle-index: root.font-subtitle-index; ass: root.font-ass; busy: root.font-busy; message: root.font-message; lyric-font: root.lyric-font; control(action,value) => { root.control(action,value); } }
-            if root.section == 3: OnlineOptions { music-enabled: root.online-music-enabled; lyrics-enabled: root.online-lyrics-enabled; directories: root.online-directories; control(action,value) => {root.control(action,value);} }
-            if root.section == 4: LyricOptions { style: root.lyric-style; family: root.lyric-font; accent: root.lyrics-accent; control(action, value) => { root.control(action, value); } }
-            if root.section == 2: Rectangle {
+            if root.section == 3: GlassSurface {
+                VerticalLayout { padding: 22px;
+                    OnlineOptions { music-enabled: root.online-music-enabled; lyrics-enabled: root.online-lyrics-enabled; directories: root.online-directories; control(action,value) => {root.control(action,value);} }
+                }
+            }
+            if root.section == 4: GlassSurface {
+                VerticalLayout { padding: 22px;
+                    LyricOptions { style: root.lyric-style; family: root.lyric-font; accent: root.lyrics-accent; control(action, value) => { root.control(action, value); } }
+                }
+            }
+            if root.section == 2: GlassSurface {
 
-                VerticalLayout { spacing: 14px;
+                VerticalLayout { padding: 22px; spacing: 14px;
                     Text { text: "播放快捷键"; color: Theme.text; font-size: 20px; font-weight: 600; height: 32px; }
-                    Text { text: "输入如 Space、Right、Ctrl+O。Enter / Esc 保留给全屏。\n文本编辑与选项面板打开时，播放快捷键不会抢占输入。"; color: Theme.muted; font-size: 12px; height: 42px; }
+                    Text { text: "输入如 Space、Right、Ctrl+O。Enter / Esc 保留给全屏。\n文本编辑与选项面板打开时，播放快捷键不会抢占输入。"; color: Theme.muted; font-size: 14px; height: 42px; }
                     for binding[index] in root.bindings: HorizontalLayout {
                         height: 34px; spacing: 18px;
-                        Text { text: binding.action; width: 160px; color: Theme.text; font-size: 12px; vertical-alignment: center; }
+                        Text { text: binding.action; width: 160px; color: Theme.text; font-size: 14px; vertical-alignment: center; }
                         LineEdit { text: binding.binding; horizontal-stretch: 1; edited(value) => { root.edit-binding(index, value); } }
                     }
                     HorizontalLayout {
@@ -64,7 +73,7 @@ export component SettingsPage inherits Rectangle {
                         Button { text: "恢复默认"; clicked => { root.control("reset-shortcuts", ""); } }
                         Button { text: "返回上一页"; clicked => { root.control("page-back", ""); } }
                     }
-                    Text { text: "解码设置位于播放页的「播放选项」中，可应用到全局、文件夹或单文件。\n音量、输出设备、快捷键、最近文件和解码规则会保存在用户配置目录。"; color: Theme.muted; font-size: 12px; height: 52px; }
+                    Text { text: "解码设置位于播放页的「播放选项」中，可应用到全局、文件夹或单文件。\n音量、输出设备、快捷键、最近文件和解码规则会保存在用户配置目录。"; color: Theme.muted; font-size: 14px; height: 52px; }
                 }
             }
         }

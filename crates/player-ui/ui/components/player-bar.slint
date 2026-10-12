@@ -40,8 +40,8 @@ export component PlayerBar inherits Rectangle {
                 }
                 VerticalLayout {
                     horizontal-stretch: 1; alignment: center; spacing: 5px;
-                    Text { text: root.title; color: Theme.text; font-size: 12px; font-weight: 600; overflow: elide; }
-                    if !root.compact: Text { text: root.artist; color: Theme.muted; font-size: 10px; overflow: elide; }
+                    Text { text: root.title; color: Theme.text; font-size: root.compact ? 14px : 16px; font-weight: 600; overflow: elide; }
+                    if !root.compact: Text { text: root.artist; color: Theme.muted; font-size: 12px; overflow: elide; }
                 }
                 if !root.compact: VerticalLayout { width: 36px; alignment: center; IconButton { icon: Icons.heart; label: "收藏"; active: root.favorite; clicked => { root.toggle-favorite(); } } }
             }

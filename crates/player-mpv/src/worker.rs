@@ -264,6 +264,12 @@ impl Core {
         snapshot.muted = self.get("mute") == "yes";
         snapshot.title = self.get("media-title");
         snapshot.audio_output = Some(self.get("audio-device"));
+        snapshot.media_format = self.get("file-format");
+        snapshot.audio_codec = self.get("audio-codec-name");
+        snapshot.audio_backend = self.get("current-ao");
+        snapshot.audio_bitrate = number("audio-bitrate")
+            .filter(|v| *v > 0.0 && *v < u64::MAX as f64)
+            .map(|v| v.round() as u64);
         snapshot.hwdec = self.get("hwdec-current");
         snapshot.video_output_enabled = !self.get("current-vo").is_empty();
         let video = self.get("video-codec");

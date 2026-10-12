@@ -43,7 +43,10 @@ fn main() {
     fs::write(
         &resource_script,
         format!(
-            r#"IDI_ICON1 ICON "{escaped_icon_path}"
+            // RC defaults to the system code page; Rust writes this file as UTF-8.
+            // Declare it explicitly so an icon path containing Chinese remains valid.
+            r#"#pragma code_page(65001)
+IDI_ICON1 ICON "{escaped_icon_path}"
 1 VERSIONINFO
 FILEVERSION {major},{minor},{patch},0
 PRODUCTVERSION {major},{minor},{patch},0

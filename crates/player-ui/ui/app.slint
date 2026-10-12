@@ -48,7 +48,7 @@ export component AppWindow inherits Window {
     title: root.has-media ? root.selected-title + " · YYPlayer" : "YYPlayer";
     preferred-width: 1240px; preferred-height: 900px; min-width: 1000px; min-height: 640px;
     private property <color> canvas: Theme.background;
-    background: root.canvas; default-font-family: root.ui-font; default-font-size: 12px;
+    background: root.canvas; default-font-family: root.ui-font; default-font-size: 14px;
     in property <int> appearance-design: 1; in property <int> appearance-scheme;
     in property <bool> appearance-dark: true; in property <color> appearance-accent: #6875e8; in property <color> appearance-ink: white; in property <color> appearance-accent-text: #9fa8ff;
     in property <bool> appearance-system-accent: true; in property <string> appearance-custom: "#6875e8";
@@ -132,6 +132,15 @@ export component AppWindow inherits Window {
     out property <float> moving-cover-x: (20px + (root.lyric-cover-x - 20px) * root.cover-progress) / 1px;
     out property <float> moving-cover-y: (root.height - 64px + (root.lyric-cover-y - root.height + 64px) * root.cover-progress) / 1px;
     out property <float> moving-cover-size: (48px + (root.lyric-cover-size - 48px) * root.cover-progress) / 1px;
+    // The text journey is spatially tied to the cover and fully transparent by
+    // its halfway point. The same curve in both directions keeps reversal continuous.
+    private property <float> lyric-fade: min(1, max(0, (root.cover-progress - 0.5) * 2));
+    out property <float> lyric-content-opacity: root.lyric-fade * root.lyric-fade * (3 - 2 * root.lyric-fade);
+    out property <float> lyric-content-x; out property <float> lyric-content-y;
+    out property <float> lyric-header-x; out property <float> lyric-header-y;
+    out property <float> lyric-song-x; out property <float> lyric-song-y;
+    out property <float> lyric-text-x; out property <float> lyric-text-y;
+    in property <string> song-technical-info;
     in property <string> album; in property <string> audio-status; in property <string> eq-origin;
     in property <string> eq-binding; in property <string> eq-headroom-text; in property <AudioForm> audio-form;
     in property <[TrackRow]> recent;
@@ -315,18 +324,34 @@ export component AppWindow inherits Window {
             }
         }
     }
-    if root.page == 4 || root.lyrics-presence > 0.001: NowPlaying {
-        x: 0px; y: root.chrome-height; width: root.lyric-page-width; height: root.lyric-page-height;
-        opacity: min(1, max(0, root.lyrics-presence)); clip: true;
-        interactive: root.page == 4; can-go-back: root.can-go-back; lyric-font: root.lyric-font;
+    // Retain the laid-out lyric page during browsing, so re-entry starts at the
+    // current line and does not pay for construction during the cover journey.
+    if root.page == 4 || ((root.has-media || root.preview) && !root.has-video) || root.cover-travelling: Rectangle {
+        visible: root.page == 4 || root.cover-travelling;
+        x: 0px; y: root.chrome-height; width: root.lyric-page-width; height: root.lyric-page-height; clip: true;
+        // Clip the journey to the content area; translucent playback controls
+        // must never reveal travelling lyrics beneath their buttons.
+        NowPlaying {
+        width: parent.width; height: parent.height;
+        opacity: root.lyric-content-opacity; clip: true;
+        journey-progress: min(1, max(0, root.cover-progress)); journey-origin-x: 44px; journey-origin-y: root.height - root.chrome-height - 40px;
+        motion-geometry(hx, hy, sx, sy, lx, ly) => {
+            root.lyric-header-x = hx; root.lyric-header-y = hy + root.chrome-height / 1px;
+            root.lyric-song-x = sx; root.lyric-song-y = sy + root.chrome-height / 1px;
+            root.lyric-text-x = lx; root.lyric-text-y = ly + root.chrome-height / 1px;
+            root.lyric-content-x = lx - (110px + root.lyric-column-width * 1.5) / 1px;
+            root.lyric-content-y = ly - (76px + (root.lyric-page-height - 110px) / 2) / 1px;
+        }
+        interactive: root.page == 4 && !root.cover-travelling; can-go-back: root.can-go-back; lyric-font: root.lyric-font;
         style: root.lyric-style; accent: root.album-palette; accent-text: root.album-text;
         artwork: root.music-cover; hide-artwork: true; options-open: root.lyric-options-open;
         options-toggled(open) => { root.lyric-options-open = open; }
         title: root.selected-title; artist: root.selected-artist; album: root.album;
         lyrics: root.lyrics; active: root.active-lyric; plain-lines: root.plain-lyric-lines;
-        playing: root.playing; output-status: root.audio-status;
+        playing: root.playing; output-status: root.song-technical-info; travelling: root.cover-travelling;
         geometry(center, height, scroll) => { root.lyric-active-center = center; root.lyric-viewport-height = height; root.lyric-scroll-y = scroll; }
         control(action,value) => { root.control(action,value); }
+        }
     }
     if root.page == 4 && root.lyric-options-open: TouchArea {
         x: 0px; y: root.chrome-height + 64px; width: root.lyric-page-width; height: root.lyric-page-height - 64px;

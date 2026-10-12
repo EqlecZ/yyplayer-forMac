@@ -2,6 +2,68 @@ use super::*;
 use player_core::audio::{BandKind, EqBand, EqPreset, OutputMode};
 use player_core::{AudioMode, AudioRequest};
 use player_ui::view_model::AudioViewModel;
+
+// Source properties come from the bounded tag worker or the Engine snapshot.
+// Compressed PCM decode format cannot stand in for a file's source bit depth.
+fn technical_info(
+    assets: &music_assets::Assets,
+    snapshot: &player_core::PlaybackSnapshot,
+) -> String {
+    let format = if assets.file_type == "MPEG" && !snapshot.audio_codec.is_empty() {
+        snapshot.audio_codec.to_uppercase()
+    } else if !assets.file_type.is_empty() {
+        assets.file_type.clone()
+    } else if !snapshot.media_format.is_empty() {
+        snapshot.media_format.to_uppercase()
+    } else if !snapshot.audio_codec.is_empty() {
+        snapshot.audio_codec.to_uppercase()
+    } else {
+        "格式未知".into()
+    };
+    let bitrate = assets
+        .bitrate_kbps
+        .map(|v| format!("{v} kbps"))
+        .or_else(|| {
+            snapshot
+                .audio_bitrate
+                .map(|v| format!("≈{} kbps", v.saturating_add(500) / 1000))
+        })
+        .unwrap_or_else(|| "码率未知".into());
+    let rate = assets
+        .sample_rate
+        .map(u64::from)
+        .or(snapshot.audio_source_rate)
+        .map(|v| {
+            if v % 1000 == 0 {
+                format!("{} kHz", v / 1000)
+            } else if v % 100 == 0 {
+                format!("{:.1} kHz", v as f64 / 1000.0)
+            } else {
+                format!("{v} Hz")
+            }
+        })
+        .unwrap_or_else(|| "采样率未知".into());
+    let depth = assets
+        .bit_depth
+        .map(|v| format!("{v} bit"))
+        .unwrap_or_else(|| "源位深未知".into());
+    let status = if snapshot.audio_status.is_empty() {
+        "输出状态未知"
+    } else {
+        &snapshot.audio_status
+    };
+    let backend = if snapshot.audio_backend.is_empty()
+        || status
+            .to_ascii_lowercase()
+            .contains(&snapshot.audio_backend.to_ascii_lowercase())
+    {
+        String::new()
+    } else {
+        format!(" · {}", snapshot.audio_backend.to_uppercase())
+    };
+    format!("{format} | {bitrate} | {rate} | {depth} | {status}{backend}")
+}
+
 impl AppController {
     pub(super) fn audio_path(&self) -> Option<&std::path::Path> {
         match self.queue.get(self.selected_id as usize) {
@@ -436,6 +498,7 @@ impl AppController {
                 .map_or(-1, |i| i as i32),
             album: self.assets.album.clone(),
             status: self.engine.snapshot().audio_status.clone(),
+            technical_info: technical_info(&self.assets, self.engine.snapshot()),
             origin,
             mode: match self.settings.audio.mode {
                 OutputMode::Shared => 0,
@@ -480,5 +543,45 @@ impl AppController {
                 .cloned()
                 .unwrap_or("未绑定，使用全局".into()),
         }
+    }
+}
+
+#[cfg(test)]
+mod technical_tests {
+    use super::*;
+
+    #[test]
+    fn source_depth_and_actual_output_are_not_guessed() {
+        let mut snapshot = player_core::PlaybackSnapshot {
+            audio_codec: "mp3".into(),
+            audio_bitrate: Some(128_000),
+            audio_source_rate: Some(44_100),
+            audio_status: "WASAPI 共享输出".into(),
+            ..Default::default()
+        };
+        let assets = music_assets::Assets::default();
+        assert_eq!(
+            technical_info(&assets, &snapshot),
+            "MP3 | ≈128 kbps | 44.1 kHz | 源位深未知 | WASAPI 共享输出"
+        );
+        snapshot.audio_status = "WASAPI 独占已确认".into();
+        let assets = music_assets::Assets {
+            file_type: "FLAC".into(),
+            bitrate_kbps: Some(912),
+            sample_rate: Some(96_000),
+            bit_depth: Some(24),
+            ..Default::default()
+        };
+        assert_eq!(
+            technical_info(&assets, &snapshot),
+            "FLAC | 912 kbps | 96 kHz | 24 bit | WASAPI 独占已确认"
+        );
+        assert_eq!(
+            technical_info(
+                &music_assets::Assets::default(),
+                &player_core::PlaybackSnapshot::default()
+            ),
+            "格式未知 | 码率未知 | 采样率未知 | 源位深未知 | 输出状态未知"
+        );
     }
 }

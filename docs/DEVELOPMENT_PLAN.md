@@ -2,7 +2,7 @@
 
 本文保留原 README 的完整选型、架构、任务顺序和验收规格，供开发者接续实现。规划中的目标、候选版本和待办不代表已经交付；当前实现与锁定版本以 [实际状态](STATUS.md)、[架构决策](adr/) 和仓库文件为准。
 
-项目概览与启动方法见 [README](../README.md)，产品更新见 [CHANGELOG](../CHANGELOG.md)，执行规则见 [AGENTS](../AGENTS.md)。当前源码许可为 GPL-3.0-only，正式分支为 master；Windows / Ubuntu Linux 共用代码已合入 master，当前应用版本为 0.3.0。Windows 自动编译打包与 Linux 本机证据见 STATUS；下文保留规划时的选型背景与未完成的完整资格目标。
+项目概览与启动方法见 [README](../README.md)，产品更新见 [CHANGELOG](../CHANGELOG.md)，执行规则见 [AGENTS](../AGENTS.md)。当前源码许可为 GPL-3.0-only，唯一顶层开发分支为 dev，master 只合入 dev，用于集成 / 发布；Windows / Ubuntu Linux 共用代码已合入 master，当前 dev 开发版本为 0.4.1。Windows 自动编译打包与 Linux 本机证据见 STATUS；下文保留规划时的选型背景与未完成的完整资格目标。
 
 ## 1. 选型结论
 

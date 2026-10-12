@@ -52,6 +52,11 @@ pub struct PlaybackSnapshot {
     pub audio_blocked: bool,
     pub audio_source_rate: Option<u64>,
     pub audio_output_rate: Option<u64>,
+    /// Actual demuxer / codec and packet bitrate, never a service's quality label.
+    pub media_format: String,
+    pub audio_codec: String,
+    pub audio_backend: String,
+    pub audio_bitrate: Option<u64>,
 }
 
 #[derive(Clone, Debug, Default)]

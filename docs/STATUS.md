@@ -1,5 +1,47 @@
 # YYPlayer 进度与证据
 
+## 2026-10-12：0.4.1 歌词文字提前收拢 / 淡出
+
+状态：Done（Windows 实现、Release 转场与相关回归范围）。先按用户要求将现有 0.4.0 全部改动提交到 dev（`676a699`），随后在 dev 完成 0.4.1；本轮新修改未提交、无推送或 master 合入。此前条目的未提交描述保留为当时记录，以本条为最新状态。详见 [0.4.1 验收](validation/frontend-0.4.1.md)。
+
+- 结果：歌词、歌曲信息、页头按钮的中心分别朝左下小封面中心收拢；透明度由实际封面进度驱动，剩余进度≤50%时完全透明。往返共用同一曲线，保留480ms封面回弹、当前行预定位、固定尺寸 / 换行与减少动态效果；按钮转场中禁用点击但不额外瞬间变灰。没有改 Engine、presenter / prepare_gl、依赖或音频默认策略。
+- 文件：app / now-playing、lyrics-ui 实际几何 / 透明度与搜索页返回验收；Cargo workspace / lock 五个 crate、两套打包 fixture 同步0.4.1；README / CHANGELOG / LYRICS / DEVELOPMENT_PLAN / PUBLISHING / ADR0009、本条与验收报告。
+- 检查：fmt check、严格 locked/offline workspace/all-targets clippy、完整 workspace/all-targets tests 通过，48项独立单测、既有HTTPS默认ignored。最终Release歌词验收59阶段、13组GPU取色、544个轨迹点通过；Test-UiCustomization22阶段、navigation-ui、ui-feedback17阶段与两套Windows打包隔离回归7 / 10项通过。实际GUI / 硬件相关脚本串行运行，独立配置 / 自有素材，不改用户APPDATA或系统设置。
+- 转场证据：返回音乐库1000×640、搜索页1840×1040与1000×640分别8个中间轨迹样本；61个半程以后且封面仍在旅行的样本文字透明度均为0。三个区域最终共同抵达屏幕逻辑坐标(44,600) / (44,1000)。两张搜索页半程GPU截图确认歌词、歌曲信息和页头按钮无残影；晚段39.3秒第13行入场、快速反向与减少动态效果通过。
+- Release：最终应用构建通过，`target/release/yyplayer.exe`为30,330,880字节，FileVersion / ProductVersion均0.4.1，SHA-256 `2b86439ef8fe90a14affbc97923bfb889929b2e87ab8872a85027c2b8b2e7623`。独立配置4秒启动 / 正常退出exit0、ready=true、Idle、error / render_error空、视频renderer初始化0。本轮没有生成完整0.4.1 ZIP / Setup；双击根目录Package-Windows.cmd会自动编译并使用0.4.1版本，原包保留。
+- 限制与下一步：本轮Windows场景未发现剩余转场缺陷；未新增Linux / macOS、物理键鼠 / 多DPI / 多屏、DAC / 位准确 / HDR或安装 / 卸载资格。下一步在Linux复验同一素材的转场，并补物理快速反向 / 多DPI；后续按明确授权提交0.4.1，再由master合入已验证dev改动。
+
+## 2026-10-12：Windows 双击打包入口
+
+状态：Done（Windows 本地入口、失败边界与实际 0.4.0 包范围）。在 dev 沿用已有工作区改动；未提交 / 推送 / 合入 master，版本继续为 0.4.0。详见 [双击打包验收](validation/windows-packaging-launcher.md)。
+
+- 结果：根目录 Package-Windows.cmd 双击启动，优先 pwsh、回退自带 PowerShell 5.1；定位项目、补充正常 Rust / Git 路径、检查固定 libmpv、准备校验后的便携 NSIS，复用自动 Release 编译。成功打开独立 dist/windows-时间-随机标识目录，按键关闭窗口，失败显示原因并保留每次日志；重复打包保留旧包。Rust / C++ Build Tools / Windows SDK / Git 仍需预先安装。
+- 文件：根 .cmd、新 Package-Windows-Interactive / Get-Nsis / Test-WindowsPackagingLauncher、NSIS 工具 manifest / 说明；Package-Windows 增加 OutputDirectory，默认 CI 路径不变；Get-Mpv 修正重复 tar、识别标准安装的 7-Zip与 PS5 下载；build.rs 声明资源脚本 UTF-8，解决中文路径编译；README / PUBLISHING / CHANGELOG 与报告。.gitignore 已覆盖 target / dist / 归档 / 日志，无需新增忽略规则。
+- 检查：Rust fmt check、严格 locked/offline workspace/all-targets clippy 通过；PowerShell 语法 / diff 与文档链接通过；原打包 7 项、新入口 10 项隔离回归通过，含中文 / 空格 / 括号路径、Windows PowerShell 5.1、实际 cmd 启动、同版本同提交重复打包、失败不使用旧 EXE、archive / DLL hash 保护和自有 archive 实际提取。修正 PS5 原回归准备阶段将 Cargo 锁等待进度误判为异常的问题。pwsh 与 PS5 两种宿主的 NSIS 首次联网下载 / curl 重试与固定 hash、v3.12 启动均通过，证据见报告。
+- 实际打包：根 .cmd 首次编译 4分08秒、PS5 最终重新编译 2分02秒，两次均成功生成 ZIP / Setup，旧 0.3.1 两个包 hash 未变。最终包位于 dist/windows-20261012-150619-a8b04b88；包内 EXE ProductVersion=0.4.0，与本次 Cargo EXE / BUILD-INFO 的 hash 一致；解压包使用独立配置启动 4秒 / 正常退出 exit0、ready=true、Idle、error / render_error 空、renderer 初始化0。
+- 限制与下一步：未执行安装 / 卸载、物理 Explorer 双击、多DPI或新增播放 / DAC / HDR验收；实际运行了同一 .cmd 入口。完整 libmpv 网络下载本轮用自有 archive 的下载替身加真实提取验证，固定真实 DLL 在两次完整打包与启动中验证；工具下载 / 依赖缺失仍可能需要联网和预装编译环境。后续在干净 Windows 构建环境补首次 libmpv 获取与安装 / 卸载；提交与 master 合入仍等明确授权。
+
+## 2026-10-12：0.4.0 前端优化
+
+状态：Done（Windows实现与本轮前端资格范围）；Linux / macOS、物理输入与多DPI待验。沿用dev，保留此前0.3.1规则 / 文档修改；未提交 / 推送 / 合入master，分支指针仍为c089cf7。详见 [0.4.0验收](validation/frontend-0.4.0.md)。
+
+- 目标 / 结果：完成用户七项要求，搜索宽列显示歌曲 / 歌手 / 专辑；操作字号12→14px，音乐库14 / 13px，底栏歌曲名16px；全部设置页卡片；双语各自实际字号测量，普通语言间距为当前行70%；歌手 / 专辑同一行，真实类型 / 码率 / 源采样率 / 源位深 / 当前输出API摘要；歌词 / 信息跟随封面往返，进入前定位，固定内容区裁剪防止透过底栏。
+- 文件 / 边界：player-ui页面、lyric-line / player-bar / media / options与shell / view_model；core快照、mpv Engine属性获取、app后台标签 / audio_controller投影；lyric-layout / lyrics-ui / online-search回归、workspace / lock和打包fixture升至0.4.0；README / CHANGELOG / LYRICS / DEVELOPMENT_PLAN / PUBLISHING / ADR0009补充本轮决定与报告。没有依赖更新、presenter / prepare_gl或默认音频策略改变。
+- 检查：fmt check、严格workspace/all-targets clippy、完整workspace/all-targets tests通过，48项独立单测（14 / 9 / 1 / 1 / 23，既有HTTPS默认ignored，例子复用不重复统计）。Test-Lyrics Debug与Release53阶段 / 13组GPU取色、lyric-layout3场景、Test-UiCustomization22阶段、navigation-ui、ui-feedback、audio-ui、navigation-history与Test-Online FrontendOnly / SkipHttps / SkipNavigation通过；Windows PowerShell5.1隔离打包7项通过，文档链接 / diff通过。
+- 实机：自有素材 / 独立配置；同句普通主语言26px、选中换行为74px、窄列普通换行为51px，语言间距7 / 10 / 7px，换行不增加假间隙。Release后半段39.3秒第13行入场的9个中间进度样本均居中偏移0px，往返有共同位移；1240×900与1000×640三种新增卡片截图审查。保留回弹、快速反向 / 减少动态效果和静默保存；未读用户歌曲或更改用户APPDATA / 系统偏好。
+- Release：最终普通EXE / Release例子构建通过；EXE FileVersion / ProductVersion=0.4.0，30,297,600字节，SHA-256 `4defd6091ed6fe0e7e43e9f0ccaafd43128624b51dadf4f4f094f60a1e50c7e4`。独立4秒启动 / 正常退出exit0、ready=true、Idle、error / render_error空、视频renderer初始化0，固定runtime通过。程序位于target/release/yyplayer.exe；本轮未生成完整0.4.0ZIP / Setup，旧0.3.1包保留。
+- 修正 / 限制：修正大字号预留高度、字号与滚动同时重启的居中漂移、入场从首行滚动、退场元素原地淡出 / 透过底栏；GPU静态取色先暂停测试新素材，避免运动圆点与上一帧快照误差。Windows本轮场景未发现剩余缺陷；极长歌词 / 技术信息仍需滚动或换行，源位深未知保持未知。未新增Linux / macOS、DAC / 位准确 / HDR、多屏 / 物理输入、安装 / 卸载和发行闭包资格。
+- 下一步：Linux使用同一素材复验布局 / 转场 / 输出摘要，补物理键鼠与多DPI；后续按明确授权在dev提交并验证，再让master合入。
+
+## 2026-10-12：dev 顶层开发规则与 0.3.1 本地重新打包
+
+状态：Done（dev 工作区规则 / 版本更新与本地编译打包范围）。本轮不提交 / 推送或合入 master；基准仍为 `c089cf7`，修改保留在 dev 工作区。详见 [0.3.1 验收](validation/windows-packaging-0.3.1.md)。
+
+- 目标 / 模块：AGENTS 第 0 节明确唯一顶层开发分支 / 起点为 dev，master 仅合入 dev；同步 CONTRIBUTING / README / DEVELOPMENT_PLAN / PUBLISHING，五个 workspace crate / Cargo.lock 升至0.3.1，更新打包回归 fixture 版本、CHANGELOG、本条及报告。
+- 验收：fmt check、locked/offline metadata（五个crate均0.3.1）、7项隔离打包回归、文档链接 / PowerShell AST / diff通过。PowerShell5.1 的真实 Package-Windows 自动 locked x64 Release 编译（4分06秒）与 ZIP / Setup 生成 exit0；EXE / Setup FileVersion与ProductVersion均0.3.1，ZIP EXE与本次Cargo产物hash一致，固定DLLhash一致。包内程序独立配置4秒正常退出 exit0、ready=true、Idle、error/render_error空、render初始化0。
+- 产物 / 分支：`dist/YYPlayer-0.3.1-c089cf735fde-windows-x64-{portable.zip,setup.exe}`，包内如实记录 working tree modified。已确认当前分支dev且原master/dev/远端跟踪指针未变；master提交内版本仍0.3.0。生成物保留在ignored的target/dist，未加入Git。
+- 限制 / 下一步：播放源码无改动，因此未重复严格clippy、完整单测及UI / GPU / 音频 / Linux / macOS / USB / HDR专项，本轮不新增其资格；Setup未安装或卸载。后续按明确授权在dev提交，经验证再合入master；不能直接在master修代码或改版本。
+
 ## 2026-10-12：两端 master 合并与 master / dev 同步
 
 状态：合并与 Windows 本地验证完成；按本条策略同步并在交付时核验四个分支一致。用户授权合并本地 / 远端 master，并更新两端 dev；详见 [同步记录](validation/master-dev-sync.md)。
