@@ -167,6 +167,13 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                     {
                         if event.state == ElementState::Pressed {
                             window.invoke_pointer_activity();
+                            if chord == "Escape" && window.get_lyric_options_open() {
+                                if !event.repeat {
+                                    window.invoke_dismiss_lyric_options();
+                                    keyboard_controller.borrow_mut().cancel_hold();
+                                }
+                                return EventResult::PreventDefault;
+                            }
                         }
                         let consumed = keyboard_controller.borrow_mut().key(
                             &chord,

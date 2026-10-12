@@ -1,9 +1,11 @@
-import { ComboBox } from "std-widgets.slint";
+import { ThemeComboBox as ComboBox } from "theme-widgets.slint";
 import { Theme, Icons } from "../theme.slint";
 import { Cover } from "media.slint";
 import { MusicArt } from "music-art.slint";
 import { Icon, IconButton, QuietSlider } from "controls.slint";
 export component PlayerBar inherits Rectangle {
+    out property <bool> input-focused: speed-choice.input-focused;
+    out property <string> speed-label: speed-choice.current-text;
     in property <bool> compact; in property <bool> playing; in property <bool> has-media;
     in property <bool> seekable; in property <bool> muted;
     in property <string> title; in property <string> artist; in property <string> duration;
@@ -11,6 +13,7 @@ export component PlayerBar inherits Rectangle {
     in property <int> cover; in property <float> volume; in property <bool> favorite;
     in property <int> speed-index; in property <[string]> speed-choices;
     in property <image> artwork; in property <bool> preview;
+    in property <bool> hide-artwork;
     callback play(); callback previous(); callback next(); callback volume-changed(float);
     callback toggle-favorite(); callback control(string, string);
     height: root.compact ? 70px : 104px; background: Theme.glass;
@@ -30,8 +33,8 @@ export component PlayerBar inherits Rectangle {
                 x: 0px; y: 0px; width: transport.x - 16px; height: parent.height; padding: 0px; spacing: 12px;
                 if !root.compact: VerticalLayout { width: 48px; alignment: center;
                     Rectangle { width: 48px; height: 48px;
-                        if root.preview: Cover { artwork-id: root.cover; width: 48px; height: 48px; }
-                        if !root.preview: MusicArt { artwork: root.artwork; playing: root.playing; width: 48px; height: 48px; }
+                        if root.preview && !root.hide-artwork: Cover { artwork-id: root.cover; width: 48px; height: 48px; }
+                        if !root.preview && !root.hide-artwork: MusicArt { artwork: root.artwork; playing: root.playing; width: 48px; height: 48px; }
                         TouchArea { mouse-cursor: pointer; clicked => { root.control("music-toggle", ""); } }
                     }
                 }
@@ -53,7 +56,7 @@ export component PlayerBar inherits Rectangle {
             HorizontalLayout {
                 x: transport.x + transport.width + 16px; y: 0px; width: parent.width - self.x; height: parent.height;
                 padding: 0px; spacing: 8px; alignment: end;
-                VerticalLayout { width: 88px; padding: 0px; alignment: center; ComboBox { model: root.speed-choices; current-index: root.speed-index; selected(value) => { root.control("speed", value); } } }
+                VerticalLayout { width: 88px; padding: 0px; alignment: center; speed-choice := ComboBox { above: true; model: root.speed-choices; current-index: root.speed-index; selected(value, choice) => { root.control("speed", value); } } }
                 VerticalLayout { width: 30px; padding: 0px; alignment: center; IconButton { width: 30px; height: 30px; icon: Icons.volume; label: "静音 / 取消静音"; active: root.muted; clicked => { root.control("mute", ""); } } }
                 VerticalLayout { width: 86px; padding: 0px; alignment: center; QuietSlider { value: root.volume; width: 86px; label: "音量"; edited(value) => { root.volume-changed(value); } } }
                 Text { text: round(root.volume) + "%"; width: 32px; color: Theme.muted; font-size: 10px; vertical-alignment: center; }

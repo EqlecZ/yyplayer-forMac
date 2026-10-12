@@ -1,0 +1,17 @@
+[
+  {
+    "column_song": 0.5600000023841858,
+    "cover_navigation": true,
+    "font_families": 278,
+    "library_rows": 79,
+    "minimize_confirmed": true,
+    "native_corner_hresult": 0,
+    "native_corner_preference": 2,
+    "native_window": "maximize/restore/close",
+    "result": "PASS",
+    "silent_play_save": true,
+    "stages": 22,
+    "subtitle_font": "Times New Roman",
+    "visible_thumbnails": true
+  }
+]

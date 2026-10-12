@@ -3,14 +3,15 @@ export component MusicArt inherits Rectangle {
     in property <image> artwork;
     in property <bool> playing;
     in property <bool> animated;
+    in property <color> accent: Theme.accent;
     private property <float> orbit: 0;
     background: @linear-gradient(145deg, Theme.selected, Theme.surface, Theme.raised);
     border-radius: 14px; clip: true;
     Timer { interval: 100ms; running: root.animated && root.playing && !Theme.reduced-motion; triggered => { root.orbit = mod(root.orbit + 0.4, 360); } }
-    Rectangle { x: parent.width * 0.08; y: parent.height * 0.08; width: parent.width * 0.84; height: self.width; border-radius: self.width / 2; background: Theme.sidebar; border-width: 1px; border-color: Theme.accent.with-alpha(0.26);
-        Rectangle { x: parent.width * 0.08; y: parent.height * 0.08; width: parent.width * 0.84; height: self.width; border-radius: self.width / 2; background: transparent; border-width: 1px; border-color: Theme.accent.with-alpha(0.13); }
-        Image { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; width: parent.width * 0.28; height: self.width; source: Icons.music; colorize: Theme.accent; transform-rotation: root.orbit * 1deg; }
+    Rectangle { x: parent.width * 0.08; y: parent.height * 0.08; width: parent.width * 0.84; height: self.width; border-radius: self.width / 2; background: Theme.sidebar; border-width: 1px; border-color: root.accent.with-alpha(0.26);
+        Rectangle { x: parent.width * 0.08; y: parent.height * 0.08; width: parent.width * 0.84; height: self.width; border-radius: self.width / 2; background: transparent; border-width: 1px; border-color: root.accent.with-alpha(0.13); }
+        Image { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; width: parent.width * 0.28; height: self.width; source: Icons.music; colorize: root.accent; transform-rotation: root.orbit * 1deg; }
     }
     if root.artwork.width > 0: Image { source: root.artwork; width: parent.width; height: parent.height; image-fit: cover; }
-    Rectangle { x: parent.width - 10px; y: parent.height - 10px; width: 4px; height: 4px; border-radius: 2px; background: root.playing ? Theme.accent : Theme.faint; }
+    Rectangle { x: parent.width - 10px; y: parent.height - 10px; width: 4px; height: 4px; border-radius: 2px; background: root.playing ? root.accent : Theme.faint; }
 }

@@ -1,9 +1,12 @@
 import { ScrollView, Palette, Button, ComboBox, LineEdit } from "std-widgets.slint";
 import { GlassSurface } from "components/glass.slint";
-import { Theme, Icons, BackgroundArt } from "theme.slint";
+import { Theme, ThemeBinding, Icons, BackgroundArt } from "theme.slint";
 import { Icon, NavItem, ActionButton } from "components/controls.slint";
 import { QueueRow } from "components/media.slint";
 import { PlayerBar } from "components/player-bar.slint";
+import { MusicArt } from "components/music-art.slint";
+import { MusicAmbient } from "components/music-ambient.slint";
+import { LyricOptions } from "components/lyric-options.slint";
 import { WindowChrome } from "components/window-chrome.slint";
 import { IconButton } from "components/controls.slint";
 import { VideoOptions } from "components/video-options.slint";
@@ -15,8 +18,8 @@ import { VideoPlayerToolbar } from "components/video-player-toolbar.slint";
 import { RecentPage } from "pages/recent.slint";
 import { SettingsPage } from "pages/settings.slint";
 import { OnlineSearchPage } from "pages/online-search.slint";
-export { TrackRow, ShortcutRow, EqBandRow, LyricRow, AudioForm } from "models.slint";
-import { TrackRow, ShortcutRow, LyricRow, AudioForm } from "models.slint";
+export { TrackRow, ShortcutRow, EqBandRow, LyricRow, LyricStyle, AudioForm } from "models.slint";
+import { TrackRow, ShortcutRow, LyricRow, LyricStyle, AudioForm } from "models.slint";
 export component AppWindow inherits Window {
     in property <int> online-revision: -1; in property <[TrackRow]> online-tracks;
     in property <[string]> online-providers; in property <[string]> online-sources;
@@ -44,7 +47,7 @@ export component AppWindow inherits Window {
     in-out property <float> column-song: 0.46; in-out property <float> column-artist: 0.24;
     title: root.has-media ? root.selected-title + " · YYPlayer" : "YYPlayer";
     preferred-width: 1240px; preferred-height: 900px; min-width: 1000px; min-height: 640px;
-    private property <color> canvas: Theme.background; animate canvas { duration: Theme.smooth; }
+    private property <color> canvas: Theme.background;
     background: root.canvas; default-font-family: root.ui-font; default-font-size: 12px;
     in property <int> appearance-design: 1; in property <int> appearance-scheme;
     in property <bool> appearance-dark: true; in property <color> appearance-accent: #6875e8; in property <color> appearance-ink: white; in property <color> appearance-accent-text: #9fa8ff;
@@ -55,7 +58,10 @@ export component AppWindow inherits Window {
     in property <image> custom-library-background; in property <image> custom-lyrics-background;
     in property <int> background-image-revision: -1;
     callback apply-theme();
-    apply-theme => { Theme.design = root.appearance-design; Theme.dark = root.appearance-dark; Theme.accent = root.appearance-accent; Theme.accent-ink = root.appearance-ink; Theme.accent-text = root.appearance-accent-text; Theme.reduced-motion = root.appearance-reduced || root.appearance-os-reduced; Palette.color-scheme = Theme.dark ? ColorScheme.dark : ColorScheme.light; }
+    apply-theme => {
+        Theme.design = root.appearance-design; Theme.dark = root.appearance-dark;
+        Theme.reduced-motion = root.motion-reduced; Palette.color-scheme = Theme.dark ? ColorScheme.dark : ColorScheme.light;
+    }
     changed appearance-design => { root.apply-theme(); }
     changed appearance-accent => { root.apply-theme(); }
     changed appearance-accent-text => { root.apply-theme(); }
@@ -81,6 +87,51 @@ export component AppWindow inherits Window {
     in property <bool> preview;
     in property <image> music-cover; in property <int> asset-revision;
     in property <[LyricRow]> lyrics; in property <int> active-lyric; in property <string> plain-lyrics;
+    in property <[LyricRow]> plain-lyric-lines;
+    in property <LyricStyle> lyric-style;
+    in property <int> lyric-style-revision: -1;
+    out property <int> settings-section;
+    in property <color> lyrics-accent: #6875e8; in property <color> lyrics-accent-text: #9fa8ff; in property <color> lyrics-accent-ink: white;
+    private property <color> album-palette: root.lyrics-accent;
+    private property <color> album-ink: root.lyrics-accent-ink;
+    private property <color> album-text: root.lyrics-accent-text;
+    animate album-palette, album-ink, album-text { duration: root.motion-reduced ? 0ms : 950ms; easing: ease-in-out; }
+    out property <float> lyrics-theme-mix: min(1, max(0, root.lyrics-presence));
+    out property <color> display-accent: root.appearance-accent.mix(root.album-palette, 1 - root.lyrics-theme-mix);
+    out property <color> display-accent-ink: root.appearance-ink.mix(root.album-ink, 1 - root.lyrics-theme-mix);
+    out property <color> display-accent-text: root.appearance-accent-text.mix(root.album-text, 1 - root.lyrics-theme-mix);
+    out property <color> display-background: Theme.background;
+    out property <color> display-surface: Theme.surface;
+    out property <color> actual-theme-accent: Theme.accent;
+    out property <string> actual-speed-label: playback-bar.speed-label;
+    ThemeBinding { accent: root.display-accent; ink: root.display-accent-ink; text-accent: root.display-accent-text; album: root.album-palette; mix: root.lyrics-theme-mix; }
+    in-out property <bool> lyric-options-open;
+    out property <float> lyric-check-x; out property <float> lyric-check-y;
+    out property <float> lyric-increase-x; out property <float> lyric-increase-y;
+    out property <float> lyric-options-width; out property <float> lyric-options-height;
+    out property <bool> cover-travelling;
+    cover-settle := Timer { interval: 500ms; running: false; triggered => { self.running = false; root.cover-travelling = false; } }
+    out property <float> lyric-active-center;
+    out property <float> lyric-viewport-height;
+    out property <float> lyric-scroll-y;
+    private property <bool> motion-reduced: root.appearance-reduced || root.appearance-os-reduced;
+    private property <float> lyrics-presence;
+    animate lyrics-presence { duration: root.motion-reduced ? 0ms : 420ms; easing: ease-in-out; }
+    out property <float> cover-progress;
+    animate cover-progress { duration: root.motion-reduced ? 0ms : 480ms; easing: cubic-bezier(0.22, 1.14, 0.42, 1); }
+    callback dismiss-lyric-options();
+    dismiss-lyric-options => { root.lyric-options-open = false; }
+    changed motion-reduced => { if root.motion-reduced { cover-settle.stop(); root.cover-travelling = false; root.cover-progress = root.page == 4 ? 1 : 0; root.lyrics-presence = root.page == 4 ? 1 : 0; page-animation.stop(); root.page-arrival = 1; } }
+    private property <length> lyric-page-width: root.width - (root.panel-open ? 370px : 0px);
+    private property <length> lyric-page-height: root.height - root.chrome-height - root.controls-height;
+    private property <bool> lyric-has-text: root.lyrics.length > 0 || root.plain-lyric-lines.length > 0;
+    private property <length> lyric-column-width: (root.lyric-page-width - 108px - (root.lyric-has-text ? 56px : 0px)) / (root.lyric-has-text ? 2 : 1);
+    private property <length> lyric-cover-size: min(350px, root.lyric-column-width, max(150px, root.lyric-page-height - 250px));
+    private property <length> lyric-cover-x: 54px + (root.lyric-column-width - root.lyric-cover-size) / 2;
+    private property <length> lyric-cover-y: root.chrome-height + 76px + max(0px, (root.lyric-page-height - 110px - root.lyric-cover-size - 140px) / 2);
+    out property <float> moving-cover-x: (20px + (root.lyric-cover-x - 20px) * root.cover-progress) / 1px;
+    out property <float> moving-cover-y: (root.height - 64px + (root.lyric-cover-y - root.height + 64px) * root.cover-progress) / 1px;
+    out property <float> moving-cover-size: (48px + (root.lyric-cover-size - 48px) * root.cover-progress) / 1px;
     in property <string> album; in property <string> audio-status; in property <string> eq-origin;
     in property <string> eq-binding; in property <string> eq-headroom-text; in property <AudioForm> audio-form;
     in property <[TrackRow]> recent;
@@ -100,12 +151,12 @@ export component AppWindow inherits Window {
     in-out property <int> render-initializations;
     out property <float> video-width: root.width / 1px - (root.panel-open ? 370 : 0);
     out property <float> video-height: root.height / 1px - (root.immersive ? 0 : root.controls-height / 1px);
-    out property <float> content-opacity: root.page == 1 ? 1 : root.page-arrival;
+    out property <float> content-opacity: root.page == 1 ? 1 : (root.page == 4 ? root.lyrics-presence : root.page-arrival);
     out property <float> content-left: content.x / 1px;
     out property <float> content-width: content.width / 1px;
     out property <float> content-bottom: (root.chrome-height + content.y + content.height) / 1px;
     private property <bool> search-focused;
-    out property <bool> shortcuts-blocked: root.page == 3 || root.page == 6 || root.panel-open || ((root.page == 0 || root.page == 5) && root.search-focused);
+    out property <bool> shortcuts-blocked: root.page == 3 || root.page == 6 || root.panel-open || root.lyric-options-open || playback-bar.input-focused || ((root.page == 0 || root.page == 5) && root.search-focused);
     private property <bool> immersive: root.page == 1 && root.fullscreen-mode;
     private property <bool> controls-awake: true;
     in-out property <bool> pointer-in-controls;
@@ -124,7 +175,7 @@ export component AppWindow inherits Window {
     private property <float> page-arrival: 1;
     animate page-arrival { duration: Theme.smooth; easing: ease-out; }
     page-animation := Timer { interval: 16ms; running: false; triggered => { self.running = false; root.page-arrival = 1; } }
-    changed page => { root.online-at-bottom = false; root.online-history-open = false; root.search-focused = false; root.pointer-activity(); if root.page != 1 && !Theme.reduced-motion { root.page-arrival = 0; page-animation.start(); } else { page-animation.stop(); root.page-arrival = 1; } }
+    changed page => { root.cover-travelling = !root.motion-reduced && (root.page == 4 || root.cover-progress != 0); if root.cover-travelling { if cover-settle.running { cover-settle.restart(); } else { cover-settle.start(); } } else { cover-settle.stop(); } root.cover-progress = root.page == 4 ? 1 : 0; root.lyrics-presence = root.page == 4 ? 1 : 0; root.lyric-options-open = false; root.online-at-bottom = false; root.online-history-open = false; root.search-focused = false; root.pointer-activity(); if root.page != 1 && root.page != 4 && !root.motion-reduced { root.page-arrival = 0; page-animation.start(); } else { page-animation.stop(); root.page-arrival = 1; } }
     // Keep request scheduling on the window; the conditional page only reports
     // geometry. Dispatch after projection has released controller borrows.
     Timer { interval: 150ms; running: root.page == 6 && root.online-at-bottom && root.online-tracks.length > 0 && !root.online-history-open && (root.online-lyric-mode ? root.online-lyrics-enabled : root.online-music-enabled) && root.online-more && !root.online-busy && root.online-selected < 0;
@@ -146,6 +197,11 @@ export component AppWindow inherits Window {
     callback volume-changed(float); callback toggle-favorite(); callback control(string,string);
     callback shortcut-edited(int,string);
     if Theme.fashion && root.page != 1: Rectangle { x: parent.width * 0.3; y: -80px; width: parent.width * 0.7; height: 440px; border-radius: 220px; background: @linear-gradient(120deg, Theme.glow, transparent); }
+    if root.lyrics-theme-mix > 0.001: MusicAmbient {
+        x: 0px; y: 0px; width: parent.width; height: parent.height;
+        accent: root.album-palette; opacity: root.lyrics-theme-mix;
+        style: root.lyrics-background-style; image-opacity: root.lyrics-background-opacity; custom-image: root.custom-lyrics-background;
+    }
     VerticalLayout {
         x: 0px; y: root.chrome-height; width: root.width;
         height: root.height - root.chrome-height - (root.immersive ? 0px : root.controls-height);
@@ -188,6 +244,7 @@ export component AppWindow inherits Window {
                 if (root.page == 0 || root.page == 5) && root.library-background-style == 5: Image { width: parent.width; height: parent.height; image-fit: cover; source: root.custom-library-background; opacity: root.library-background-opacity / 100; }
                 VerticalLayout {
                     spacing: 0px;
+                    if root.page == 4: Rectangle { vertical-stretch: 1; }
                     if root.page != 1 && root.page != 4: HorizontalLayout {
                         visible: !root.fullscreen-mode;
                         height: root.fullscreen-mode ? 0px : 84px; padding-left: 24px; padding-right: 24px; spacing: 12px;
@@ -216,7 +273,6 @@ export component AppWindow inherits Window {
                         VerticalLayout { width: root.page == 6 && root.online-compact ? 72px : 100px; alignment: center; Button { text: root.page == 6 && root.online-compact ? (root.panel-open ? "关闭" : "选项") : (root.panel-open ? "关闭选项" : "播放选项"); clicked => { root.control("panel", ""); } } }
                     }
                     if root.page == 0: MusicPage { visible-first <=> root.library-visible-first; visible-count <=> root.library-visible-count; column-song <=> root.column-song; column-artist <=> root.column-artist; library-tracks: root.library-tracks; folders: root.library-folders; folder-index: root.library-folder; scanning: root.library-busy; library-selected: root.library-selected; control(action,value) => { root.control(action,value); } preview: root.preview; tracks: root.tracks; selected-id: root.selected-id; select-preview(id) => { root.select-preview(id); } select-demo-album(id) => { root.control("demo-album", "" + id); } }
-                    if root.page == 4: NowPlaying { can-go-back: root.can-go-back; lyric-font: root.lyric-font; artwork: root.music-cover; title: root.selected-title; artist: root.selected-artist; album: root.album; lyrics: root.lyrics; active: root.active-lyric; plain: root.plain-lyrics; playing: root.playing; output-status: root.audio-status; background-style: root.lyrics-background-style; background-opacity: root.lyrics-background-opacity; custom-background: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
                     if root.page == 6: OnlineSearchPage { compact: root.panel-open && root.width < 1280px; at-bottom <=> root.online-at-bottom; history-open <=> root.online-history-open; tracks: root.online-tracks; providers: root.online-providers; sources: root.online-sources; provider-index: root.online-provider; source-index: root.online-source; history: root.online-history; keep-history: root.online-keep-history; enabled: root.online-lyric-mode ? root.online-lyrics-enabled : root.online-music-enabled; busy: root.online-busy; lyric-mode: root.online-lyric-mode; message: root.online-message; selected: root.online-selected; qualities: root.online-qualities; quality-enabled: root.online-quality-enabled; download: root.online-download; download-play: root.online-download-play; visible-first <=> root.online-visible-first; visible-count <=> root.online-visible-count; control(action,value) => {root.control(action,value);} }
                     if root.page == 5: VideoLibraryPage {
                         tracks: root.video-library-tracks; folders: root.video-library-folders; folder-index: root.video-library-folder;
@@ -234,6 +290,8 @@ export component AppWindow inherits Window {
                         }
                     }
                     if root.page == 3: SettingsPage {
+                        section <=> root.settings-section;
+                        lyric-style: root.lyric-style; lyrics-accent: root.lyrics-accent-text; lyrics-color: root.lyrics-accent;
                         online-music-enabled: root.online-music-enabled; online-lyrics-enabled: root.online-lyrics-enabled; online-directories: root.online-directories;
                         font-names: root.font-names; font-lyric-names: root.font-lyric-names; font-subtitle-names: root.font-subtitle-names; font-ui-index: root.font-ui-index; font-lyric-index: root.font-lyric-index; font-subtitle-index: root.font-subtitle-index; font-ass: root.font-ass; font-busy: root.font-busy; font-message: root.font-message; lyric-font: root.lyric-font;
                         design: root.appearance-design; scheme: root.appearance-scheme; system-accent: root.appearance-system-accent; custom-accent: root.appearance-custom; reduced: root.appearance-reduced; os-reduced: root.appearance-os-reduced; system-available: root.appearance-system-available;
@@ -257,6 +315,37 @@ export component AppWindow inherits Window {
             }
         }
     }
+    if root.page == 4 || root.lyrics-presence > 0.001: NowPlaying {
+        x: 0px; y: root.chrome-height; width: root.lyric-page-width; height: root.lyric-page-height;
+        opacity: min(1, max(0, root.lyrics-presence)); clip: true;
+        interactive: root.page == 4; can-go-back: root.can-go-back; lyric-font: root.lyric-font;
+        style: root.lyric-style; accent: root.album-palette; accent-text: root.album-text;
+        artwork: root.music-cover; hide-artwork: true; options-open: root.lyric-options-open;
+        options-toggled(open) => { root.lyric-options-open = open; }
+        title: root.selected-title; artist: root.selected-artist; album: root.album;
+        lyrics: root.lyrics; active: root.active-lyric; plain-lines: root.plain-lyric-lines;
+        playing: root.playing; output-status: root.audio-status;
+        geometry(center, height, scroll) => { root.lyric-active-center = center; root.lyric-viewport-height = height; root.lyric-scroll-y = scroll; }
+        control(action,value) => { root.control(action,value); }
+    }
+    if root.page == 4 && root.lyric-options-open: TouchArea {
+        x: 0px; y: root.chrome-height + 64px; width: root.lyric-page-width; height: root.lyric-page-height - 64px;
+        clicked => { root.lyric-options-open = false; }
+    }
+    if root.page == 4 && root.lyric-options-open: lyric-options-card := Rectangle {
+        x: root.lyric-page-width - self.width - 20px; y: root.chrome-height + 64px;
+        width: min(330px, root.lyric-page-width - 40px); height: root.lyric-page-height - 84px;
+        background: Theme.sidebar; border-radius: 16px; border-width: 1px; border-color: Theme.accent.with-alpha(0.45);
+        drop-shadow-blur: 24px; drop-shadow-color: Theme.shadow;
+        lyric-options-scroll := ScrollView { x: 14px; y: 14px; width: parent.width - 28px; height: parent.height - 28px; viewport-width: self.width; viewport-height: lyric-options-form.height;
+            scrolled => { lyric-options-form.report-layout(); }
+            changed viewport-y => { lyric-options-form.report-layout(); }
+            lyric-options-form := LyricOptions { x: 0px; y: 0px; width: parent.width - 14px; style: root.lyric-style; family: root.lyric-font; accent: root.album-text; preview: false;
+                layout(cx, cy, ix, iy) => { root.lyric-check-x = (lyric-options-card.x + 14px) / 1px + cx; root.lyric-check-y = (lyric-options-card.y + 14px + lyric-options-scroll.viewport-y) / 1px + cy; root.lyric-increase-x = (lyric-options-card.x + 14px) / 1px + ix; root.lyric-increase-y = (lyric-options-card.y + 14px + lyric-options-scroll.viewport-y) / 1px + iy; root.lyric-options-width = lyric-options-card.width / 1px; root.lyric-options-height = lyric-options-card.height / 1px; }
+                control(action, value) => { root.control(action, value); }
+            }
+        }
+    }
     if root.header-visible: Rectangle {
         x: 0px; y: root.fullscreen-mode ? 0px : 36px; width: root.video-width * 1px; height: root.header-height; background: Theme.glass;
         VideoPlayerToolbar { can-go-back: root.can-go-back;
@@ -267,8 +356,9 @@ export component AppWindow inherits Window {
         }
     }
     if !root.fullscreen-mode && (root.page != 1 || root.header-visible): WindowChrome { x: 0px; y: 0px; width: root.width; title: root.title; left-controls: root.window-controls-left; maximized: root.window-maximized; action(a) => { root.window-action(a); } }
-    PlayerBar {
+    playback-bar := PlayerBar {
         artwork: root.music-cover; preview: root.preview;
+        hide-artwork: root.page == 4 || root.cover-travelling;
         y: root.height - root.controls-height; width: root.width;
         visible: root.controls-visible;
         compact: root.page == 1; playing: root.playing; has-media: root.has-media; seekable: root.seekable;
@@ -278,6 +368,16 @@ export component AppWindow inherits Window {
         play => { root.request-playback(); } previous => { root.previous(); } next => { root.next(); }
         volume-changed(value) => { root.volume-changed(value); } toggle-favorite => { root.toggle-favorite(); }
         control(action,value) => { root.control(action,value); }
+    }
+    // Retain one cover for the entire reversible journey, including its bounce.
+    if root.page == 4 || root.cover-travelling: MusicArt {
+        x: root.moving-cover-x * 1px; y: root.moving-cover-y * 1px;
+        width: root.moving-cover-size * 1px; height: self.width;
+        artwork: root.music-cover; playing: root.playing; animated: root.page == 4;
+        accent: root.display-accent;
+        accessible-role: button; accessible-label: root.page == 4 ? "返回上一页" : "展开歌词页";
+        focus := FocusScope { key-pressed(event) => { if root.page != 1 && (root.page != 4 || root.can-go-back) && (event.text == " " || event.text == "\n") { root.control("music-toggle", ""); return accept; } return reject; } }
+        TouchArea { enabled: root.page != 1 && (root.page != 4 || root.can-go-back); mouse-cursor: pointer; clicked => { focus.focus(); root.control("music-toggle", ""); } }
     }
     if root.toast-visible && root.status-message != "": GlassSurface {
         private property <float> entrance: 0; init => { self.entrance = 1; }

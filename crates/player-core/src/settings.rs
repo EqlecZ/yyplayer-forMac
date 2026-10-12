@@ -55,6 +55,7 @@ pub struct Settings {
     pub library: crate::library::LibrarySettings,
     pub video_library: crate::library::LibrarySettings,
     pub fonts: crate::typography::Fonts,
+    pub lyrics: crate::lyrics::LyricStyle,
     pub library_columns: crate::typography::LibraryColumns,
 }
 impl Default for Settings {
@@ -74,6 +75,7 @@ impl Default for Settings {
             library: Default::default(),
             video_library: Default::default(),
             fonts: Default::default(),
+            lyrics: Default::default(),
             library_columns: Default::default(),
         }
     }
@@ -92,6 +94,7 @@ impl Settings {
         self.library.validate()?;
         self.video_library.validate()?;
         self.fonts.validate()?;
+        self.lyrics.validate()?;
         self.library_columns.validate()?;
         for options in self.folders.values().chain(self.files.values()) {
             options.validate()?;

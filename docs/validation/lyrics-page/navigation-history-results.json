@@ -1,0 +1,218 @@
+[
+  {
+    "can_go_back": false,
+    "opacity": 1.0,
+    "page": 0,
+    "query": "",
+    "stage": 0,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "",
+    "stage": 1,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 3,
+    "query": "保留搜索条件",
+    "stage": 2,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 3,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 3,
+    "query": "保留搜索条件",
+    "stage": 4,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 2,
+    "query": "保留搜索条件",
+    "stage": 5,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 0.9978644847869873,
+    "page": 5,
+    "query": "保留搜索条件",
+    "stage": 6,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 2,
+    "query": "保留搜索条件",
+    "stage": 7,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 3,
+    "query": "保留搜索条件",
+    "stage": 8,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 9,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 10,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 3,
+    "query": "保留搜索条件",
+    "stage": 11,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 12,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 4,
+    "query": "保留搜索条件",
+    "stage": 13,
+    "width": 1240.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 14,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 4,
+    "query": "保留搜索条件",
+    "stage": 15,
+    "width": 1240.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 16,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": false,
+    "opacity": 0.9989047646522522,
+    "page": 0,
+    "query": "保留搜索条件",
+    "stage": 17,
+    "width": 1038.0,
+    "window_width": 1240.0
+  },
+  {
+    "can_go_back": false,
+    "opacity": 1.0,
+    "page": 0,
+    "query": "保留搜索条件",
+    "stage": 18,
+    "width": 798.0,
+    "window_width": 1000.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 19,
+    "width": 798.0,
+    "window_width": 1000.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 3,
+    "query": "保留搜索条件",
+    "stage": 20,
+    "width": 798.0,
+    "window_width": 1000.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 21,
+    "width": 1258.0,
+    "window_width": 1460.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 3,
+    "query": "保留搜索条件",
+    "stage": 22,
+    "width": 1258.0,
+    "window_width": 1460.0
+  },
+  {
+    "can_go_back": true,
+    "opacity": 1.0,
+    "page": 6,
+    "query": "保留搜索条件",
+    "stage": 23,
+    "width": 1258.0,
+    "window_width": 1460.0
+  }
+]

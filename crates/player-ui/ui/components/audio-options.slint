@@ -1,4 +1,4 @@
-import { ComboBox, CheckBox, Button, LineEdit, Slider } from "std-widgets.slint";
+import { ThemeComboBox as ComboBox, ThemeCheckBox as CheckBox, ThemeButton as Button, ThemeLineEdit as LineEdit } from "theme-widgets.slint";
 import { Theme } from "../theme.slint";
 import { AudioForm } from "../models.slint";
 export component AudioOptions inherits VerticalLayout {
@@ -8,31 +8,31 @@ export component AudioOptions inherits VerticalLayout {
     private property <bool> eq-expanded;
     spacing: 10px;
     Text { text: "音频输出"; color: Theme.text; font-size: 16px; height: 28px; font-weight: 600; }
-    ComboBox { model: ["共享 · 兼容优先", "优先独占 · 允许同设备共享回退", "严格独占 · 失败暂停"]; current-index: root.form.mode; selected(value) => { root.control("output-mode", "" + self.current-index); } }
+    ComboBox { model: ["共享 · 兼容优先", "优先独占 · 允许同设备共享回退", "严格独占 · 失败暂停"]; current-index: root.form.mode; selected(value, choice) => { root.control("output-mode", "" + choice); } }
     Text { text: root.status; color: Theme.accent-text; wrap: word-wrap; min-height: 38px; }
     Button { text: "重新连接 / 重试当前输出"; clicked => { root.control("output-retry", ""); } }
-    CheckBox { text: "独占保持源采样率（不兼容则暂停）"; checked: root.form.preserve-rate; toggled => { root.control("preserve-rate", self.checked ? "yes" : "no"); } }
+    CheckBox { text: "独占保持源采样率（不兼容则暂停）"; checked: root.form.preserve-rate; toggled(next) => { root.control("preserve-rate", next ? "yes" : "no"); } }
     Text { text: "不强制升采样，不默认添加音效。独占与 EQ 可以同时使用；调整音量、EQ、倍速会改变样本。"; color: Theme.faint; font-size: 11px; wrap: word-wrap; min-height: 46px; }
     Rectangle { height: 1px; background: Theme.border; }
     Text { text: "均衡器"; color: Theme.text; font-size: 16px; font-weight: 600; height: 28px; }
     Text { text: "生效优先级：单文件 → 设备绑定 → 全局\n当前：" + root.origin + " · 设备：" + root.binding; color: Theme.muted; font-size: 11px; wrap: word-wrap; min-height: 38px; }
     Button { text: root.eq-expanded ? "收起 EQ 编辑器" : "展开 EQ 编辑器"; clicked => { root.eq-expanded = !root.eq-expanded; } }
     if root.eq-expanded: VerticalLayout { spacing: 10px;
-    ComboBox { model: ["编辑全局 EQ", "编辑当前输出设备 EQ", "编辑当前文件 EQ"]; current-index: root.form.scope; selected(value) => { root.control("eq-scope", "" + self.current-index); } }
+    ComboBox { model: ["编辑全局 EQ", "编辑当前输出设备 EQ", "编辑当前文件 EQ"]; current-index: root.form.scope; selected(value, choice) => { root.control("eq-scope", "" + choice); } }
     Text { text: "命名预设（选择后载入草稿）"; color: Theme.muted; font-size: 11px; height: 20px; }
-    ComboBox { model: root.form.presets; current-index: root.form.preset-index; selected(value) => { root.control("eq-preset", "" + self.current-index); } }
+    ComboBox { model: root.form.presets; current-index: root.form.preset-index; selected(value, choice) => { root.control("eq-preset", "" + choice); } }
     HorizontalLayout { Button { text: "导入预设"; clicked => { root.control("eq-import", ""); } } Button { text: "导出 JSON"; clicked => { root.control("eq-export", ""); } } }
     LineEdit { text: root.form.name; placeholder-text: "预设名称"; edited(value) => { root.control("eq-name", value); } }
-    CheckBox { text: "启用均衡器"; checked: root.form.enabled; toggled => { root.control("eq-enabled", self.checked ? "yes" : "no"); } }
+    CheckBox { text: "启用均衡器"; checked: root.form.enabled; toggled(next) => { root.control("eq-enabled", next ? "yes" : "no"); } }
     HorizontalLayout { Text { text: "前置增益 dB"; color: Theme.muted; vertical-alignment: center; } LineEdit { text: root.form.preamp; edited(value) => { root.control("eq-preamp", value); } } }
-    CheckBox { text: "自动留出正增益余量"; checked: root.form.auto-headroom; toggled => { root.control("eq-headroom", self.checked ? "yes" : "no"); } }
+    CheckBox { text: "自动留出正增益余量"; checked: root.form.auto-headroom; toggled(next) => { root.control("eq-headroom", next ? "yes" : "no"); } }
     Text { text: root.headroom; color: Theme.faint; font-size: 11px; height: 20px; }
     for band[index] in root.form.bands: Rectangle {
-        height: 102px; background: Theme.surface; border-radius: 8px;
+        height: 110px; background: Theme.surface; border-radius: 8px;
         VerticalLayout { padding: 8px; spacing: 6px;
             HorizontalLayout { spacing: 5px;
                 LineEdit { text: band.frequency; placeholder-text: "Hz"; edited(value) => { root.control("eq-band", index + ":f:" + value); } }
-                ComboBox { model: ["峰值", "低架", "高架"]; current-index: band.kind; selected(value) => { root.control("eq-band", index + ":k:" + self.current-index); } }
+                ComboBox { model: ["峰值", "低架", "高架"]; current-index: band.kind; selected(value, choice) => { root.control("eq-band", index + ":k:" + choice); } }
                 Button { text: "×"; width: 28px; clicked => { root.control("eq-remove", "" + index); } }
             }
             HorizontalLayout { spacing: 5px; Text { text: "dB"; color: Theme.muted; vertical-alignment: center; width: 20px; }

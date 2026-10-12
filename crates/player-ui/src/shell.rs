@@ -266,6 +266,35 @@ fn project(window: &AppWindow, state: &ShellViewModel) {
     window.set_video_library_selected(video.selected);
     window.set_video_library_busy(video.busy);
     let audio = &state.audio;
+    let rgb = if audio.lyric_style.album_color {
+        audio.cover_color.unwrap_or(state.appearance.accent)
+    } else {
+        state.appearance.accent
+    };
+    let color =
+        |rgb: u32| slint::Color::from_rgb_u8((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8);
+    window.set_lyrics_accent(color(rgb));
+    window.set_lyrics_accent_ink(color(player_core::appearance::ink(rgb)));
+    window.set_lyrics_accent_text(color(player_core::appearance::text_accent(
+        rgb,
+        state.appearance.dark,
+    )));
+    if window.get_lyric_style_revision() != audio.lyric_style_revision as i32 {
+        let s = &audio.lyric_style;
+        window.set_lyric_style(crate::LyricStyle {
+            album_color: s.album_color,
+            bilingual: s.bilingual,
+            line_gap: s.line_gap as i32,
+            inactive_size: s.inactive_size as i32,
+            inactive_opacity: s.inactive_opacity as i32,
+            inactive_weight: s.inactive_weight as i32,
+            active_size: s.active_size as i32,
+            active_weight: s.active_weight as i32,
+            secondary_weight: s.secondary_weight as i32,
+            bilingual_gap: s.bilingual_gap as i32,
+        });
+        window.set_lyric_style_revision(audio.lyric_style_revision as i32);
+    }
     window.set_preview(audio.preview);
     window.set_active_lyric(audio.active_lyric);
     window.set_audio_status(audio.status.as_str().into());
@@ -282,10 +311,17 @@ fn project(window: &AppWindow, state: &ShellViewModel) {
                 audio
                     .lyrics
                     .iter()
-                    .map(|(text, milliseconds)| crate::LyricRow {
-                        text: text.as_str().into(),
-                        milliseconds: *milliseconds,
-                    })
+                    .map(|(text, milliseconds)| lyric_row(text, *milliseconds))
+                    .collect::<Vec<_>>(),
+            ))
+            .into(),
+        );
+        window.set_plain_lyric_lines(
+            Rc::new(VecModel::from(
+                audio
+                    .plain_lyrics
+                    .lines()
+                    .map(|text| lyric_row(text, -1))
                     .collect::<Vec<_>>(),
             ))
             .into(),
@@ -399,6 +435,16 @@ fn project(window: &AppWindow, state: &ShellViewModel) {
         window.set_hold_speed(state.hold_speed.as_str().into());
     }
     window.set_decode_origin(state.decode_origin.as_str().into());
+}
+
+fn lyric_row(text: &str, milliseconds: i32) -> crate::LyricRow {
+    let (primary, secondary) = player_core::lyrics::bilingual_parts(text);
+    crate::LyricRow {
+        text: text.into(),
+        primary: primary.into(),
+        secondary: secondary.into(),
+        milliseconds,
+    }
 }
 
 fn strings(values: &[String]) -> ModelRc<slint::SharedString> {

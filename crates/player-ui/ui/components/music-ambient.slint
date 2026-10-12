@@ -1,0 +1,35 @@
+import { Theme, BackgroundArt } from "../theme.slint";
+
+// Same layers and normalized geometry as Android MusicAmbientBackground.
+// Static GPU gradients; never sample the window or redraw artwork on the CPU.
+export component MusicAmbient inherits Rectangle {
+    in property <color> accent: Theme.accent;
+    in property <bool> dark: Theme.dark;
+    in property <int> style;
+    in property <int> image-opacity: 35;
+    in property <image> custom-image;
+    out property <color> base: (root.dark ? #11151b : #f4f4f1).mix(root.accent, root.dark ? 0.83 : 0.88);
+    private property <color> secondary: root.accent.mix(root.dark ? #96b8d0 : white, 0.62);
+    clip: true;
+    background: root.base;
+    Rectangle {
+        private property <length> radius: root.height * 0.75;
+        x: root.width * 0.08 - self.radius; y: root.height * 0.25 - self.radius;
+        width: self.radius * 2; height: self.width;
+        background: @radial-gradient(circle, root.accent.with-alpha(root.dark ? 0.46 : 0.29), transparent 70.71%, transparent);
+    }
+    Rectangle {
+        private property <length> radius: root.height * 0.62;
+        x: root.width * 1.1 - self.radius; y: root.height * 0.56 - self.radius;
+        width: self.radius * 2; height: self.width;
+        background: @radial-gradient(circle, root.secondary.with-alpha(root.dark ? 0.21 : 0.65), transparent 70.71%, transparent);
+    }
+    if root.style >= 1 && root.style <= 4: Image {
+        x: 0px; y: 0px; width: parent.width; height: parent.height; image-fit: cover;
+        source: root.style == 1 ? BackgroundArt.lyrics-halo : (root.style == 2 ? BackgroundArt.lyrics-staff : (root.style == 3 ? BackgroundArt.lyrics-veil : BackgroundArt.lyrics-stars));
+        colorize: root.accent; opacity: root.dark ? 0.20 : 0.14;
+    }
+    if root.style == 5: Image { x: 0px; y: 0px; width: parent.width; height: parent.height; image-fit: cover; source: root.custom-image; opacity: root.image-opacity / 100; }
+    if root.style == 5: Rectangle { x: 0px; y: 0px; width: parent.width; height: parent.height; background: root.base.with-alpha(0.4); }
+    Rectangle { x: 0px; y: 0px; width: parent.width; height: parent.height; background: @linear-gradient(180deg, transparent 0%, root.base.with-alpha(0.16) 50%, root.base.with-alpha(0.8) 100%); }
+}

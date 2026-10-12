@@ -8,6 +8,7 @@ export component AppearanceOptions inherits GlassSurface {
     in property <int> library-background-style; in property <int> library-background-opacity; in property <int> library-background-blur; in property <string> library-background-name; in property <image> custom-library-background;
     in property <int> lyrics-background-style; in property <int> lyrics-background-opacity; in property <int> lyrics-background-blur; in property <string> lyrics-background-name; in property <image> custom-lyrics-background;
     callback control(string,string);
+    in property <color> lyrics-color: Theme.accent;
     VerticalLayout { padding: 22px; spacing: 14px;
         Text { text: "外观与动效"; color: Theme.text; font-size: 20px; font-weight: 600; height: 32px; }
         Text { text: "让你的音乐空间，有自己的气质。"; color: Theme.muted; height: 24px; }
@@ -27,7 +28,7 @@ export component AppearanceOptions inherits GlassSurface {
         CheckBox { text: "减少动态效果"; checked: root.reduced; toggled => { root.control("appearance-motion", self.checked ? "yes" : "no"); } }
         Rectangle { height: 1px; background: Theme.border; }
         BackgroundChoice { lyrics-page: false; style: root.library-background-style; opacity-value: root.library-background-opacity; blur-value: root.library-background-blur; file-name: root.library-background-name; custom-image: root.custom-library-background; control(action,value) => { root.control(action,value); } }
-        BackgroundChoice { lyrics-page: true; style: root.lyrics-background-style; opacity-value: root.lyrics-background-opacity; blur-value: root.lyrics-background-blur; file-name: root.lyrics-background-name; custom-image: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
+        BackgroundChoice { lyrics-page: true; accent: root.lyrics-color; style: root.lyrics-background-style; opacity-value: root.lyrics-background-opacity; blur-value: root.lyrics-background-blur; file-name: root.lyrics-background-name; custom-image: root.custom-lyrics-background; control(action,value) => { root.control(action,value); } }
         Text { text: root.os-reduced ? "系统已关闭动画；当前使用静态效果。" : (root.system-available ? "系统外观变化会自动同步，选择手动模式可固定外观。" : "当前桌面未提供外观偏好；使用应用默认主题。" ); color: Theme.faint; font-size: 11px; wrap: word-wrap; min-height: 30px; }
     }
 }
