@@ -1,5 +1,16 @@
 # YYPlayer 进度与证据
 
+## 2026-10-12：0.4.1 歌词文字提前收拢 / 淡出
+
+状态：Done（Windows 实现、Release 转场与相关回归范围）。先按用户要求将现有 0.4.0 全部改动提交到 dev（`676a699`），随后在 dev 完成 0.4.1；本轮新修改未提交、无推送或 master 合入。此前条目的未提交描述保留为当时记录，以本条为最新状态。详见 [0.4.1 验收](validation/frontend-0.4.1.md)。
+
+- 结果：歌词、歌曲信息、页头按钮的中心分别朝左下小封面中心收拢；透明度由实际封面进度驱动，剩余进度≤50%时完全透明。往返共用同一曲线，保留480ms封面回弹、当前行预定位、固定尺寸 / 换行与减少动态效果；按钮转场中禁用点击但不额外瞬间变灰。没有改 Engine、presenter / prepare_gl、依赖或音频默认策略。
+- 文件：app / now-playing、lyrics-ui 实际几何 / 透明度与搜索页返回验收；Cargo workspace / lock 五个 crate、两套打包 fixture 同步0.4.1；README / CHANGELOG / LYRICS / DEVELOPMENT_PLAN / PUBLISHING / ADR0009、本条与验收报告。
+- 检查：fmt check、严格 locked/offline workspace/all-targets clippy、完整 workspace/all-targets tests 通过，48项独立单测、既有HTTPS默认ignored。最终Release歌词验收59阶段、13组GPU取色、544个轨迹点通过；Test-UiCustomization22阶段、navigation-ui、ui-feedback17阶段与两套Windows打包隔离回归7 / 10项通过。实际GUI / 硬件相关脚本串行运行，独立配置 / 自有素材，不改用户APPDATA或系统设置。
+- 转场证据：返回音乐库1000×640、搜索页1840×1040与1000×640分别8个中间轨迹样本；61个半程以后且封面仍在旅行的样本文字透明度均为0。三个区域最终共同抵达屏幕逻辑坐标(44,600) / (44,1000)。两张搜索页半程GPU截图确认歌词、歌曲信息和页头按钮无残影；晚段39.3秒第13行入场、快速反向与减少动态效果通过。
+- Release：最终应用构建通过，`target/release/yyplayer.exe`为30,330,880字节，FileVersion / ProductVersion均0.4.1，SHA-256 `2b86439ef8fe90a14affbc97923bfb889929b2e87ab8872a85027c2b8b2e7623`。独立配置4秒启动 / 正常退出exit0、ready=true、Idle、error / render_error空、视频renderer初始化0。本轮没有生成完整0.4.1 ZIP / Setup；双击根目录Package-Windows.cmd会自动编译并使用0.4.1版本，原包保留。
+- 限制与下一步：本轮Windows场景未发现剩余转场缺陷；未新增Linux / macOS、物理键鼠 / 多DPI / 多屏、DAC / 位准确 / HDR或安装 / 卸载资格。下一步在Linux复验同一素材的转场，并补物理快速反向 / 多DPI；后续按明确授权提交0.4.1，再由master合入已验证dev改动。
+
 ## 2026-10-12：Windows 双击打包入口
 
 状态：Done（Windows 本地入口、失败边界与实际 0.4.0 包范围）。在 dev 沿用已有工作区改动；未提交 / 推送 / 合入 master，版本继续为 0.4.0。详见 [双击打包验收](validation/windows-packaging-launcher.md)。

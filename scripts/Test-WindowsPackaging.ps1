@@ -29,7 +29,7 @@ Write-Fixture 'Cargo.toml' @'
 members = ["crates/yyplayer-app"]
 resolver = "3"
 [workspace.package]
-version = "0.4.0"
+version = "0.4.1"
 '@
 Write-Fixture 'crates/yyplayer-app/Cargo.toml' @'
 [package]
@@ -106,7 +106,7 @@ try {
     $builtExe = Join-Path $env:CARGO_TARGET_DIR 'x86_64-pc-windows-msvc/release/yyplayer.exe'
     $builtHash = (Get-FileHash -LiteralPath $builtExe).Hash
     if ((Get-FileHash -LiteralPath (Join-Path $extracted 'yyplayer.exe')).Hash -ne $builtHash) { throw 'ZIP contains the wrong executable.' }
-    if ((Get-Item -LiteralPath (Join-Path $extracted 'yyplayer.exe')).VersionInfo.ProductVersion -ne '0.4.0') { throw 'ZIP has the wrong application version.' }
+    if ((Get-Item -LiteralPath (Join-Path $extracted 'yyplayer.exe')).VersionInfo.ProductVersion -ne '0.4.1') { throw 'ZIP has the wrong application version.' }
     $buildInfo = Get-Content -LiteralPath (Join-Path $extracted 'BUILD-INFO.txt') -Raw
     if ($buildInfo -notmatch $builtHash.ToLowerInvariant()) { throw 'BUILD-INFO does not identify the packaged executable.' }
     $results.Add('zip-artifact-hash-and-version')

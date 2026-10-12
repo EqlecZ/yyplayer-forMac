@@ -132,10 +132,14 @@ export component AppWindow inherits Window {
     out property <float> moving-cover-x: (20px + (root.lyric-cover-x - 20px) * root.cover-progress) / 1px;
     out property <float> moving-cover-y: (root.height - 64px + (root.lyric-cover-y - root.height + 64px) * root.cover-progress) / 1px;
     out property <float> moving-cover-size: (48px + (root.lyric-cover-size - 48px) * root.cover-progress) / 1px;
-    // Keep content geometry fixed while moving it with the cover. Reflowing a
-    // scaled lyric viewport would change wrapping and the current-line anchor.
-    out property <float> lyric-content-x: (20px - root.lyric-cover-x) / 1px * (1 - root.cover-progress);
-    out property <float> lyric-content-y: (root.height - 64px - root.lyric-cover-y) / 1px * (1 - root.cover-progress);
+    // The text journey is spatially tied to the cover and fully transparent by
+    // its halfway point. The same curve in both directions keeps reversal continuous.
+    private property <float> lyric-fade: min(1, max(0, (root.cover-progress - 0.5) * 2));
+    out property <float> lyric-content-opacity: root.lyric-fade * root.lyric-fade * (3 - 2 * root.lyric-fade);
+    out property <float> lyric-content-x; out property <float> lyric-content-y;
+    out property <float> lyric-header-x; out property <float> lyric-header-y;
+    out property <float> lyric-song-x; out property <float> lyric-song-y;
+    out property <float> lyric-text-x; out property <float> lyric-text-y;
     in property <string> song-technical-info;
     in property <string> album; in property <string> audio-status; in property <string> eq-origin;
     in property <string> eq-binding; in property <string> eq-headroom-text; in property <AudioForm> audio-form;
@@ -328,9 +332,17 @@ export component AppWindow inherits Window {
         // Clip the journey to the content area; translucent playback controls
         // must never reveal travelling lyrics beneath their buttons.
         NowPlaying {
-        x: root.lyric-content-x * 1px; y: root.lyric-content-y * 1px; width: parent.width; height: parent.height;
-        opacity: min(1, max(0, root.lyrics-presence)); clip: true;
-        interactive: root.page == 4; can-go-back: root.can-go-back; lyric-font: root.lyric-font;
+        width: parent.width; height: parent.height;
+        opacity: root.lyric-content-opacity; clip: true;
+        journey-progress: min(1, max(0, root.cover-progress)); journey-origin-x: 44px; journey-origin-y: root.height - root.chrome-height - 40px;
+        motion-geometry(hx, hy, sx, sy, lx, ly) => {
+            root.lyric-header-x = hx; root.lyric-header-y = hy + root.chrome-height / 1px;
+            root.lyric-song-x = sx; root.lyric-song-y = sy + root.chrome-height / 1px;
+            root.lyric-text-x = lx; root.lyric-text-y = ly + root.chrome-height / 1px;
+            root.lyric-content-x = lx - (110px + root.lyric-column-width * 1.5) / 1px;
+            root.lyric-content-y = ly - (76px + (root.lyric-page-height - 110px) / 2) / 1px;
+        }
+        interactive: root.page == 4 && !root.cover-travelling; can-go-back: root.can-go-back; lyric-font: root.lyric-font;
         style: root.lyric-style; accent: root.album-palette; accent-text: root.album-text;
         artwork: root.music-cover; hide-artwork: true; options-open: root.lyric-options-open;
         options-toggled(open) => { root.lyric-options-open = open; }
