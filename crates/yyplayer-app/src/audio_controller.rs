@@ -108,6 +108,9 @@ impl AppController {
                         assets.title = song.title.clone();
                         assets.artist = song.artist.clone();
                         assets.album = song.album.clone();
+                        if assets.cover.is_none() {
+                            assets.cover_color = self.assets.cover_color;
+                        }
                         if assets.lyrics.lines.is_empty() && assets.lyrics.plain.is_empty() {
                             assets.lyrics = self.assets.lyrics.clone();
                         }
@@ -420,6 +423,9 @@ impl AppController {
         AudioViewModel {
             preview: self.preview,
             cover: self.cover.clone(),
+            cover_color: self.assets.cover_color,
+            lyric_style: self.settings.lyrics.clone(),
+            lyric_style_revision: self.settings_revision,
             asset_revision: self.asset_projection_revision,
             lyrics: self.lyric_rows.clone(),
             plain_lyrics: self.plain_lyrics.clone(),

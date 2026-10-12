@@ -1,0 +1,46 @@
+import { Theme } from "../theme.slint";
+import { LyricRow, LyricStyle } from "../models.slint";
+
+// Reserve the larger font's measured height, keeping active-line changes stable.
+export component LyricLine inherits Rectangle {
+    in property <LyricRow> line;
+    in property <LyricStyle> style;
+    in property <string> family;
+    in property <color> accent;
+    in property <bool> active;
+    in property <bool> seekable;
+    private property <bool> translated: root.style.bilingual && root.line.secondary != "";
+    private property <length> size: (root.active ? root.style.active-size : root.style.inactive-size) * 1px;
+    private property <length> reserved-size: max(root.style.active-size, root.style.inactive-size) * 1px;
+    private property <length> primary-height: max(1px, measure.preferred-height);
+    private property <length> secondary-height: root.translated ? max(1px, translation-measure.preferred-height) : 0px;
+    height: root.primary-height + root.secondary-height + (root.translated ? root.style.bilingual-gap * 1px : 0px) + root.style.line-gap * 1px;
+    callback located(length, length);
+    callback clicked();
+    function report() { if root.active { root.located(root.y, root.height); } }
+    changed active => { root.report(); }
+    changed y => { root.report(); }
+    changed height => { root.report(); }
+    init => { root.report(); }
+    measure := Text { x: 10px; width: max(1px, root.width - 20px); text: root.translated ? root.line.primary : root.line.text; font-family: root.family; font-size: root.reserved-size; font-weight: max(root.style.active-weight, root.style.inactive-weight); wrap: word-wrap; opacity: 0; }
+    translation-measure := Text { x: 10px; width: max(1px, root.width - 20px); text: root.line.secondary; font-family: root.family; font-size: root.reserved-size * 0.72; font-weight: root.style.secondary-weight; wrap: word-wrap; opacity: 0; }
+    Rectangle { x: 0px; y: root.style.line-gap * 0.5px + 6px; width: 3px; height: max(12px, root.primary-height - 12px); border-radius: 2px; background: root.accent; opacity: root.active ? 0.85 : 0; animate opacity { duration: Theme.smooth; } }
+    Text {
+        x: 10px; y: root.style.line-gap * 0.5px; width: max(1px, parent.width - 20px); height: root.primary-height;
+        text: root.translated ? root.line.primary : root.line.text; font-family: root.family;
+        font-size: root.size; font-weight: root.active ? root.style.active-weight : root.style.inactive-weight;
+        color: root.active ? root.accent : Theme.text;
+        opacity: root.active ? 1 : root.style.inactive-opacity / 100;
+        vertical-alignment: center; wrap: word-wrap;
+        animate font-size, color, opacity { duration: Theme.smooth; easing: ease-out; }
+    }
+    if root.translated: Text {
+        x: 10px; y: root.style.line-gap * 0.5px + root.primary-height + root.style.bilingual-gap * 1px;
+        width: max(1px, parent.width - 20px); height: root.secondary-height;
+        text: root.line.secondary; font-family: root.family; font-size: root.size * 0.72; font-weight: root.style.secondary-weight;
+        color: root.active ? root.accent : Theme.text; opacity: root.active ? 0.82 : root.style.inactive-opacity / 100;
+        wrap: word-wrap; vertical-alignment: center;
+        animate font-size, color, opacity { duration: Theme.smooth; easing: ease-out; }
+    }
+    TouchArea { enabled: root.seekable; mouse-cursor: pointer; clicked => { root.clicked(); } }
+}

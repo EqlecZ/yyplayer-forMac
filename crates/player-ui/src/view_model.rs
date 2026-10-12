@@ -100,6 +100,9 @@ pub struct OnlineViewModel {
 pub struct AudioViewModel {
     pub preview: bool,
     pub cover: slint::Image,
+    pub cover_color: Option<u32>,
+    pub lyric_style: player_core::lyrics::LyricStyle,
+    pub lyric_style_revision: u64,
     pub asset_revision: u64,
     pub lyrics: std::rc::Rc<Vec<(String, i32)>>,
     pub plain_lyrics: std::rc::Rc<String>,
