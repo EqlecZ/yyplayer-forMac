@@ -3,7 +3,7 @@ Unicode true
 !include "x64.nsh"
 
 !ifndef APP_VERSION
-  !define APP_VERSION "0.0.1"
+  !error "APP_VERSION must be supplied by scripts/Package-Windows.ps1"
 !endif
 !ifndef APP_COMMIT
   !define APP_COMMIT "local"

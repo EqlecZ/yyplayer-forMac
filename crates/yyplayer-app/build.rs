@@ -32,11 +32,49 @@ fn main() {
     let resource_script = out_dir.join("yyplayer-icon.rc");
     let resource_file = out_dir.join("yyplayer-icon.res");
     let escaped_icon_path = icon_path.to_string_lossy().replace('\\', "\\\\");
+    let version = env::var("CARGO_PKG_VERSION").expect("Cargo sets CARGO_PKG_VERSION");
+    let version_numbers = ["MAJOR", "MINOR", "PATCH"].map(|part| {
+        env::var(format!("CARGO_PKG_VERSION_{part}"))
+            .expect("Cargo sets the package version components")
+            .parse::<u16>()
+            .expect("Windows version components must fit in 16 bits")
+    });
+    let [major, minor, patch] = version_numbers;
     fs::write(
         &resource_script,
-        format!("IDI_ICON1 ICON \"{escaped_icon_path}\"\r\n"),
+        format!(
+            r#"IDI_ICON1 ICON "{escaped_icon_path}"
+1 VERSIONINFO
+FILEVERSION {major},{minor},{patch},0
+PRODUCTVERSION {major},{minor},{patch},0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileDescription", "YYPlayer\0"
+            VALUE "FileVersion", "{version}\0"
+            VALUE "InternalName", "yyplayer\0"
+            VALUE "LegalCopyright", "GPL-3.0-only\0"
+            VALUE "OriginalFilename", "yyplayer.exe\0"
+            VALUE "ProductName", "YYPlayer\0"
+            VALUE "ProductVersion", "{version}\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
+"#
+        ),
     )
-    .expect("write generated Windows icon resource script");
+    .expect("write generated Windows icon and version resource script");
 
     let compiler = find_resource_compiler().unwrap_or_else(|| {
         panic!("Windows MSVC icon embedding requires rc.exe or llvm-rc.exe from the installed Windows SDK.")

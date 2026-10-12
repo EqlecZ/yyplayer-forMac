@@ -1,5 +1,18 @@
 # YYPlayer 进度与证据
 
+## 2026-10-12：S08 子步骤 · Windows 自动编译打包与 0.3.0
+
+状态：Done（本轮自动编译 / 打包 / 版本更新及文档整理范围）。实现与文档按用户要求一并在 master 本地提交，未推送；验收包在提交前生成，保留基准提交号与 working tree modified 标记。详见 [验收记录](validation/windows-packaging.md)。
+
+- 目标 / 模块：Windows 打包入口在打包前自动编译，再打包本次 Cargo 返回的实际 EXE；Package-Windows、Windows workflow、应用 Windows 资源、workspace / lock 版本、NSIS、打包回归、README / PUBLISHING / CHANGELOG / 本条及报告。
+- 实现：锁定依赖、固定 x64 MSVC Release；从 compiler-artifact.executable 取产物并检查 build-finished / 退出码 / 应用版本 / staging hash，支持 Cargo 自定义产物目录和任意调用目录。预检固定 runtime hash / NSIS，独立 staging、失败不发布新包、恢复环境、保留已有同名包；新增 -Offline / -NsisCompiler。CI 去掉独立编译步骤并接入隔离回归。
+- 版本：五个 workspace crate 与 Cargo.lock 更新到 0.3.0；EXE FileVersion / ProductVersion 从 Cargo 生成，NSIS 取消旧默认版本，包名 / 安装器一致。BUILD-INFO 记录应用 SHA-256、修改状态及 NSIS 实际 CLI 版本。
+- 检查：fmt check、严格 locked/offline workspace/all-targets clippy、locked/offline workspace tests、PowerShell AST 与 diff check 通过；单测 core12/mpv9/platform1/UI1/app20（43 通过，既有 HTTPS 集成 1 项 ignored，本轮未跑联网专项）。七项打包回归在 PowerShell 7 / Windows PowerShell 5.1 均通过；真实自动 Release 编译通过（首次 3分51秒），最终脚本由 PowerShell 5.1 实际生成 ZIP / Setup，复用 Cargo 确认的有效缓存产物。
+- 真机 / 产物：ZIP EXE hash 与实际 Cargo 产物一致；EXE / Setup 为 0.3.0，包内 DLL hash 与固定 manifest 一致。包内 EXE 独立配置启动，4 秒正常退出 exit0、ready=true、Idle、error / render_error 空、render 初始化 0。生成 `dist/YYPlayer-0.3.0-e99d67cb4fd2-windows-x64-{portable.zip,setup.exe}`；未安装或发布。
+- 修复 / 限制：实测纠正 PowerShell 5.1 将原生 stderr 进度当终止错误的问题，也纠正测试环境恢复留下空 CARGO_TARGET_DIR 的问题，最终复验通过。没有新增已知打包缺陷；远端 Actions、干净系统安装 / 升级 / 卸载、Linux 本轮运行与原 USB / 位准确 / HDR / 二进制许可闭包仍未验收。未改播放 / UI / 音频输出策略，未重跑硬件专项。
+- 文档 / Git：核对 master 中 `5390a3d` / `e99d67c` 的历史，纠正 README / CONTRIBUTING / AGENTS / DEVELOPMENT_PLAN / PUBLISHING / Linux 指南中的待合并描述，保留旧 STATUS / ADR 当时结论。更新 .gitignore 排除二进制、发行包与临时下载，保留锁定清单、图标、API 示例与验收文档；提交前通过26项生成路径 / 17项源码路径 ignore 断言、Markdown 链接、PowerShell AST 与暂存 diff 检查。本次仅新增文档 / 忽略规则和 LF 规范化，沿用上轮已通过的代码检查，不重复硬件专项。
+- 下一步：提交后运行 Windows x64 packages，核对 CI 产物并在干净 Windows x64 验证安装 / 升级 / 卸载；继续补齐 runtime notices / 对应源码与依赖闭包，不把本轮构建通过标记为正式发行完成。
+
 ## 2026-10-11：A01.5 · 页面历史栈与返回
 
 状态：Done（Windows 实现、验收、当前 dev-api 本地提交及缓存清理）；未推送。详见 [验收记录](validation/navigation-history.md)。

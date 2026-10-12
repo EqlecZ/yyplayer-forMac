@@ -40,10 +40,10 @@ jobs:
       - name: Generate multi-size Windows application icon
         run: ./scripts/Build-AppIcon.ps1
 
-      - name: Build Windows x64 Release executable
-        run: cargo build --locked --release --target x86_64-pc-windows-msvc -p yyplayer-app --bin yyplayer
+      - name: Test automatic build and packaging failure boundaries
+        run: ./scripts/Test-WindowsPackaging.ps1 -NsisCompiler (Get-Command makensis.exe).Source
 
-      - name: Package portable ZIP and NSIS setup
+      - name: Build Windows x64 Release and package portable ZIP and NSIS setup
         run: ./scripts/Package-Windows.ps1
 
       - name: Upload both Windows x64 release packages

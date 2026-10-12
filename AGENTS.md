@@ -125,8 +125,8 @@ STATUS 中填写：当前任务 / 子步骤、改动文件、检查命令及结�
 ## 源码发布与共用主分支接续（2026-10-03）
 
 - 用户已确定 GPL-3.0-only；workspace 与五个 crate 继承该字段，根 LICENSE 保留标准原文。第三方记录不能替代 runtime 二进制完整 notices / 对应源码安排。
-- 正式源码主分支为 master，本次 dev-linux 共用代码与文档正在准备合入 master；未完成实际合并前不能写成已合入。dev / dev-linux 是历史或功能开发分支，不是 Windows / Linux 编译的必要条件，也不假设本地必须存在 dev。原 main 提交保留在 master 历史中；当前分支状态按 git 检查，进度以 STATUS 和 docs/PUBLISHING.md 为准。
-- 用户在自己的完整仓库根目录操作，Windows 历史路径为 E:\SourceFiles\rust\yyplayer，当前 Linux 工作区为 /home/yydaniel/sourcefiles/yyplayer；路径不决定平台。此次授权仅为文档合并准备，代理不执行提交 / 合并 / 推送。发布源码不代表 USB / HDR / 广泛跨平台资格或二进制发行已完成。
+- 正式源码主分支为 master；dev-linux 共用代码已在 `5390a3d` 合入，联网搜索与页面返回已在 `e99d67c` 中。dev / dev-linux / dev-api 是历史或功能开发分支，不是 Windows / Linux 编译的必要条件，也不假设本地必须存在这些分支。原 main 提交保留在 master 历史中；当前分支状态按 git 检查，进度以 STATUS 和 docs/PUBLISHING.md 为准。
+- 用户在自己的完整仓库根目录操作，Windows 工作区为 E:\SourceFiles\rust\yyplayer，Linux 工作区为 /home/yydaniel/sourcefiles/yyplayer；路径不决定平台。2026-10-03 的文档合并准备未执行提交 / 合并 / 推送；后续 Git 操作以当轮用户授权为准。发布源码不代表 USB / HDR / 广泛跨平台资格或二进制发行已完成。
 - 用户于 2026-10-03 确认 Windows x64 packages 可以编译打包 dev-linux 的共用代码。记录为用户反馈的编译打包证据，不虚构 run URL / 提交号，也不扩展为播放、安装 / 卸载、WASAPI / GPU 或退出回归通过。修改共用逻辑时继续回归受影响的 Windows / Linux 路径，环境缺失记待验证。
 - `.github/workflows/windows-release.yml` 在 master push 生成短期 Actions CI artifact（portable ZIP + NSIS x64 Setup）；没有自动创建 GitHub Release。NSIS 安装目标限定 x64 Windows。完整 libmpv build notices / corresponding-source arrangement 与 DLL 闭包完成后，才能把 CI 包作为正式二进制发行，不能以成功构建代替发行资格。
 
@@ -150,7 +150,7 @@ STATUS 中填写：当前任务 / 子步骤、改动文件、检查命令及结�
 
 ## 12. Ubuntu Linux 接续（2026-10-03）
 
-- Linux 适配起于 dev-linux，当前为准备合入 master 的共用源码；包含当前共用代码的分支在对应系统都应能使用相同 Cargo 命令构建，禁止用分支名 / 开发者绝对路径选择平台。平台 API / 依赖维持 target cfg，Linux apt / Python 打包工具不得变成 Windows 编译前置。
+- Linux 适配起于 dev-linux，当前共用源码已在 master；包含当前共用代码的分支在对应系统都应能使用相同 Cargo 命令构建，禁止用分支名 / 开发者绝对路径选择平台。平台 API / 依赖维持 target cfg，Linux apt / Python 打包工具不得变成 Windows 编译前置。
 - 用户明确要求已创建 dev-linux，Ubuntu 26.04 amd64 本机开发预览和 deb / AppImage 适配以当前 STATUS、docs/LINUX.md、ADR 0007 为准；旧章节 Linux 未编译描述为历史边界。其他发行版、AMD / Intel / Xorg 真机、USB / HDR / 物理输入与多屏仍未资格化，不把 Wayland / Xvfb 结果泛化。
 - Linux deb / 开发使用绝对系统 libmpv2 路径和发行版安全更新，策略在 third_party/mpv/linux.json；AppImage 包内 runtime 必须通过自身 manifest / SHA-256，损坏不得静默回退系统库。Windows 固定 hash 策略保持。
 - Linux 不强制 ao 列表，它会覆盖 audio-device 中的具体后端。具体 PipeWire / Pulse / ALSA 设备必须核对实际 AO；ALSA hw 成功打开 / Final HW params 才确认，PipeWire exclusive stream 不等于硬件 DAC 独占 / 位准确。自动设备独占拒绝，失联暂停，ALSA hw 失败不猜测桌面 sink；源率保护比较源与 API。
@@ -160,5 +160,12 @@ STATUS 中填写：当前任务 / 子步骤、改动文件、检查命令及结�
 - 外观 portal 只读后台查询、字体后台枚举不变。Linux 圆角 / 阴影由 compositor 决定；Wayland 不提供客户端最小化状态 / 还原，例子不能写假确认。UI 截图可能延迟同次 timer 回调，验收等待真实状态并保留明确超时，不能删透明度断言。
 - scripts/check-linux-deps.py 先只读汇总 apt；scripts/test-linux.py / test-linux-packages.py 用独立配置、自有素材，不停止系统音频服务或修改系统主题。硬件 / 竞争测试串行，防自己的不同验收互相占设备。库、字幕、背景、快捷键和音频仍复用同一 controller / Engine。
 - scripts/package-linux.py 固定 appimagetool 归档和 runtime 源码 hash，每次从核验归档重新提取工具；两种包使用同一 Release 快照。源码包必须包含完整锁定图（含 Cargo 解析所需其他平台条件依赖），614 crate 原始归档 / notices 与空 Cargo home 的离线解析证据，不把解析称为再次完整编译。
-- 当前 Ubuntu 26.04 packages 仅在 dev-linux push 自动运行，并支持手动选择分支；合并后可手动选择 master。Linux compatibility compile matrix 仍仅手动运行。文档不得把未修改的 Linux push 触发器写成 master 自动运行。
+- 当前 Ubuntu 26.04 packages 仅在 dev-linux push 自动运行，并支持手动选择 master 或其他包含工作流的分支。Linux compatibility compile matrix 仍仅手动运行。文档不得把未修改的 Linux push 触发器写成 master 自动运行。
 - 新 Linux workflow 只生成短期 CI artifact，不代替用户推送 / 发布，也不代替安装 / 升级 / 卸载真机验收。包是开发预览：上游 AppImage runtime 的完整 Alpine 静态闭包 / 可重链接安排仍待补证，见 packaging/linux/runtime-notices/README.md；Windows DLL 闭包保留既有未完成状态。
+
+## 13. Windows 自动编译打包接续（2026-10-12）
+
+- 应用版本为 0.3.0，五个 workspace crate 继承根版本，提交 Cargo.lock；EXE 版本资源、NSIS 与包名从同一 Cargo 版本生成，不添加独立硬编码默认。
+- Package-Windows 在预检后自动执行 locked x64 MSVC Release build；使用本次 Cargo compiler-artifact.executable，检查实际退出码 / build-finished / 版本与 hash。不要恢复为读取固定旧 EXE，CI 不再另做重复编译。
+- 自定义 Cargo 产物目录放 target 子目录或仓库外；.gitignore 不替代暂存 diff 检查，不强制加入运行时二进制、包、缓存或用户配置。临时 NSIS 工具仅在 target 内使用，无需修改全局设置。
+- 修改打包执行 Test-WindowsPackaging，覆盖旧 EXE / 编译失败 / 自定义目录 / NSIS 失败 / 重试 / 已有包保护；兼容 PowerShell 5.1 / 7 原生 stderr。当前本机 ZIP / Setup 与独立启动证据见 docs/validation/windows-packaging.md，安装 / 卸载及正式发行资格仍待验。

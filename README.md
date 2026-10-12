@@ -3,6 +3,8 @@
 
 使用 Rust、Slint 和 libmpv 构建的本地音视频播放器。Windows x64 / Ubuntu 26.04 amd64 共用同一份源码，通过条件编译选择平台实现；实际验收与限制见 [STATUS](docs/STATUS.md)。
 
+当前应用版本为 **0.3.0**，源码主分支为 `master`。Windows 自动编译打包已通过本机验证；安装 / 卸载与正式二进制发行资格仍待补齐。
+
 ## 功能
 
 - 音视频播放：队列、进度、倍速、音量、音轨与字幕选择；视频支持逐帧、截图、章节和 A–B 循环。
@@ -59,7 +61,7 @@ cargo build --locked --release -p yyplayer-app --bin yyplayer
 
 ### Windows x64
 
-需要 Windows x64、Rust MSVC 工具链、Visual Studio C++ Build Tools 和 Windows SDK。已验证 Rust / Cargo 1.97.0，Slint / slint-build 固定为 1.17.1。
+需要 Windows x64、Rust MSVC 工具链、Visual Studio C++ Build Tools 和 Windows SDK。本轮已验证 Rust / Cargo 1.99.0，Slint / slint-build 固定为 1.17.1。
 
 在仓库根目录用 PowerShell 执行：
 
@@ -71,7 +73,21 @@ cargo build --locked --release -p yyplayer-app --bin yyplayer
 
 首次获取依赖需要联网。运行时脚本优先使用 7-Zip，未安装时尝试能解压 7z 的 Windows `tar.exe`；解压失败时见 [运行时说明](third_party/mpv/README.md)。
 
+### Windows 打包（0.3.0）
+
+准备上述编译环境、固定 libmpv 运行时与 NSIS 后，在 PowerShell 执行：
+
+```powershell
+.\scripts\Package-Windows.ps1
+# 依赖已缓存时可离线编译打包；便携 NSIS 可指定完整路径
+.\scripts\Package-Windows.ps1 -Offline -NsisCompiler 'C:\Tools\NSIS\makensis.exe'
+```
+
+脚本自动执行锁定依赖的 Windows x64 MSVC Release 编译，再使用该次 Cargo 返回的 EXE 生成 `dist/` 内的 portable ZIP 与 NSIS Setup，无需提前手动编译。支持 `CARGO_TARGET_DIR` / Cargo `build.target-dir`，调用目录不必是仓库根目录；编译或 NSIS 失败不发布新包，已有同版本 / 提交号的包不会被覆盖。NSIS 可放入 PATH、安装在标准 Program Files 目录，或通过参数指定。EXE 文件属性、安装器与包名使用同一应用版本，包内 `BUILD-INFO.txt` 记录 EXE SHA-256。打包证据与限制见 [验收记录](docs/validation/windows-packaging.md)。
+
 ## 运行
+
+Windows 打包脚本默认编译到 `target/x86_64-pc-windows-msvc/release/yyplayer.exe`；便携 ZIP 解压后运行其中的 `yyplayer.exe`。下面命令对应未指定 `--target` 的手动构建。自定义 Cargo 产物目录建议放在 `target/` 子目录或仓库外，源码提交不包含编译缓存、运行时 DLL、包或用户配置。
 
 ```powershell
 .\target\release\yyplayer.exe
@@ -98,13 +114,14 @@ python3 scripts/package-linux.py --skip-build  # deb / AppImage / 对应源码�
 
 GitHub Actions 的 **Linux compatibility compile matrix** 仅手动触发。默认逐一编译 Ubuntu **18.04 / 20.04 / 22.04 / 24.04 / 26.04** 和 Debian **9 / 10 / 11 / 12 / 13**，可选 Debian 14 testing；统一 Rust 1.99.0 和 Cargo.lock，完成 Release 编译后汇总 Ubuntu / Debian 各自的最早成功版本。
 
-先将工作流和配套脚本提交到 GitHub 默认分支以注册手动入口，再在 **Actions → Linux compatibility compile matrix → Run workflow** 选择含有共用代码及该工作流的分支；合并后可直接选择 `master`，合并前可选择 `dev-linux`。运行完成后查看 Summary，或下载 `linux-compatibility-report-<attempt>` 内的 `report.md` / `report.json`；各系统另有完整日志。环境失败或超时会标为未决，编译通过不代表播放或安装兼容。具体参数、报告规则与限制见 [手动编译矩阵指南](docs/LINUX_COMPATIBILITY_CI.md)。当前尚未运行远端矩阵，最低编译版本仍待实测。
+在 **Actions → Linux compatibility compile matrix → Run workflow** 选择 `master`，或选择包含共用代码及该工作流的功能分支。若修改了工作流，需先将修改推送到相应分支；GitHub 的手动入口要求工作流存在于默认分支。运行完成后查看 Summary，或下载 `linux-compatibility-report-<attempt>` 内的 `report.md` / `report.json`；各系统另有完整日志。环境失败或超时会标为未决，编译通过不代表播放或安装兼容。具体参数、报告规则与限制见 [手动编译矩阵指南](docs/LINUX_COMPATIBILITY_CI.md)。当前尚无已保存的远端矩阵报告，最低编译版本仍待实测。
 
 ## 文档与许可
 
 [更新日志](CHANGELOG.md) · [开发指南](CONTRIBUTING.md) · [完整规划](docs/DEVELOPMENT_PLAN.md) · [实际状态与验收](docs/STATUS.md) · [GitHub 发布说明](docs/PUBLISHING.md)
 
-项目自身源码与原创 UI 资源采用 **GPL-3.0-only**，见 [LICENSE](LICENSE)。第三方组件保留各自许可，见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)。源码主分支为 `master`；本次 Windows/Linux 共用代码在 `dev-linux` 准备合入主分支。开发分支用于组织变更，不决定编译平台；开发包不代替发行与硬件资格验收。
+项目自身源码与原创 UI 资源采用 **GPL-3.0-only**，见 [LICENSE](LICENSE)。第三方组件保留各自许可，见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md)。Windows/Linux 共用代码已于 `5390a3d` 合入 `master`，联网搜索与页面返回代码已包含在 `e99d67c` 中。开发分支用于组织变更，不决定编译平台；开发包不代替发行与硬件资格验收。
+
 ## 音乐联网搜索
 
-2026-10-09 `dev-api`：侧栏新增独立音乐联网搜索，移植 Android JSON v1 API、历史、来源／音质、封面、联网歌词、下载与libmpv串流。设置 → 联网服务分别开启歌曲／歌词，设置API、歌曲下载、歌词、图片与串流缓存目录。可把同一份Android JSON放到exe旁 `config/cloud_api` 并重读；无文件时使用同一份GD示例。详见[使用与配置](docs/ONLINE_API.md)、[验收](docs/validation/online-api.md)。
+侧栏提供独立音乐联网搜索，包含 Android JSON v1 API、历史、来源 / 音质、封面、联网歌词、下载与 libmpv 串流。设置 → 联网服务分别开启歌曲 / 歌词，设置 API、歌曲下载、歌词、图片与串流缓存目录。可把同一份 Android JSON 放到 EXE 旁 `config/cloud_api` 并重读；无文件时使用 GD 示例。详见 [使用与配置](docs/ONLINE_API.md)、[验收](docs/validation/online-api.md)。

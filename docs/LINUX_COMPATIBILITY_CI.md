@@ -5,7 +5,7 @@
 ## 手动运行
 
 1. 将工作流和 `scripts/linux-compat/` 配套文件提交、推送到 GitHub 默认分支（本项目为 `master`），使手动工作流入口注册。待测试分支也必须包含这些文件及 Linux 适配代码。只放在非默认分支时，GitHub 页面可能没有 Run workflow 按钮，详见 [GitHub 手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。
-2. 打开仓库 **Actions → Linux compatibility compile matrix → Run workflow**，选择含有共用代码及工作流的分支；合并后选 `master`，合并前可选 `dev-linux`。
+2. 打开仓库 **Actions → Linux compatibility compile matrix → Run workflow**，选择 `master` 或包含共用代码及工作流的功能分支。
 3. 保留默认参数运行，等待 `report` job 完成；单个发行版编译失败不会取消其他发行版。
 4. 在该次运行 Summary 查看中文报告，或下载 `linux-compatibility-report-<attempt>`，其中包含 `report.md` 和 `report.json`。逐系统日志位于 `linux-compat-case-<attempt>-<系统>`。
 

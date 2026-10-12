@@ -2,7 +2,7 @@
 
 Linux 与 Windows 共用 core、controller、Slint 界面和 libmpv GL presenter，通过目标平台 cfg 选择实现及依赖。Linux 当前验证目标是 Ubuntu 26.04 amd64；实际资格以 [Linux 验收](validation/linux.md) 和 [STATUS](STATUS.md) 为准。Windows 的 WASAPI 名称与确认规则不会用于 Linux。
 
-Linux 适配起于 `dev-linux`，正在准备合入 `master`；合并后直接在 `master` 构建即可，无需按系统切换分支。用户已确认同一代码的 Windows Actions 编译打包通过，见 [共用源码合并准备记录](validation/shared-source-merge-preparation.md)。
+Linux 适配起于 `dev-linux`，已于 `5390a3d` 合入 `master`；直接在 `master` 构建即可，无需按系统切换分支。0.3.0 的 Windows 自动编译打包见 [打包记录](validation/windows-packaging.md)，此前用户反馈见 [共用源码合并准备记录](validation/shared-source-merge-preparation.md)；本轮版本更新没有新增 Linux 实机验收。
 
 ## 构建
 
@@ -94,4 +94,4 @@ chmod +x ./dist/YYPlayer-*-x86_64.AppImage
 ./dist/YYPlayer-*-x86_64.AppImage --appimage-extract-and-run
 ```
 
-包结构、提取启动和正常退出可以不以 root 安装验证。真正安装 / 升级 / 卸载及首次文件关联仍应在独立测试系统执行。发布 workflow 生成 CI artifact，不代替这些验收。`Ubuntu 26.04 packages` 当前自动触发条件仍为 `dev-linux` push；合并后可通过 Run workflow 选择 `master` 手动运行。最低版本矩阵独立且仅手动触发，见 [矩阵指南](LINUX_COMPATIBILITY_CI.md)。
+包结构、提取启动和正常退出可以不以 root 安装验证。真正安装 / 升级 / 卸载及首次文件关联仍应在独立测试系统执行。发布 workflow 生成 CI artifact，不代替这些验收。`Ubuntu 26.04 packages` 当前自动触发条件仍为 `dev-linux` push；可通过 Run workflow 选择 `master` 手动运行。最低版本矩阵独立且仅手动触发，见 [矩阵指南](LINUX_COMPATIBILITY_CI.md)。

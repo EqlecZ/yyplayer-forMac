@@ -1,3 +1,4 @@
+# Build caches and fixtures: keep custom CARGO_TARGET_DIR under target/ or outside the repo.
 /target/
 /dist/
 /compat-results/
@@ -6,7 +7,29 @@ __pycache__/
 *.log
 *.pdb
 *.dmp
+*.obj
+*.res
+*.lib
+*.rlib
+*.rmeta
+
+# Runtime binaries and release packages are generated/downloaded, not source.
+*.exe
+*.dll
+*.so
+*.so.*
+*.dylib
+*.7z
+YYPlayer-*-windows-x64-portable.zip
+YYPlayer-*.AppImage
+yyplayer_*_amd64.deb
+YYPlayer-linux-source.tar.gz
+YYPlayer-linux-*.json
+SHA256SUMS-linux
+
+# Local configuration, incomplete downloads, and editor state.
 *.yyplayer-*.tmp
+*.partial
 /.env
 /.env.*
 !/.env.example
@@ -15,6 +38,7 @@ __pycache__/
 /config/cloud_api/*.json
 !/config/cloud_api/example-gd.json
 /*.library.json
+/*.videos.json
 *.corrupt-*.json
 /.vscode/*
 !/.vscode/extensions.json
@@ -24,6 +48,7 @@ Thumbs.db
 desktop.ini
 third_party/mpv/*/
 !third_party/mpv/README.md
+# Keep existing curated evidence; temporary validation data remains ignored.
 docs/validation/*.mp4
 docs/validation/*.mkv
 docs/validation/*.wav
